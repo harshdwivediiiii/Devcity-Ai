@@ -957,6 +957,9 @@
             border-radius: 10px;
             border: 1px solid var(--border);
             margin-top: 8px;
+        }
+
+        .gh-row.blurred {
             filter: blur(4px);
             opacity: .7;
         }
@@ -1865,14 +1868,14 @@
                         <li>🗑 Revoke any time from your GitHub settings</li>
                     </ul>
                 </div>
-                <div class="gh-preview" style="position: relative;">
-                    <div class="gh-row"><span class="repo-name">your-org/payments-api</span><span class="meta"><span>★
+                <div class="gh-preview" id="ghPreviewContainer" style="position: relative;">
+                    <div class="gh-row blurred"><span class="repo-name">your-org/payments-api</span><span class="meta"><span>★
                                 1.2k</span><span>TypeScript</span></span></div>
-                    <div class="gh-row"><span class="repo-name">your-org/web-app</span><span class="meta"><span>★
+                    <div class="gh-row blurred"><span class="repo-name">your-org/web-app</span><span class="meta"><span>★
                                 842</span><span>React</span></span></div>
-                    <div class="gh-row"><span class="repo-name">your-org/data-pipelines</span><span class="meta"><span>★
+                    <div class="gh-row blurred"><span class="repo-name">your-org/data-pipelines</span><span class="meta"><span>★
                                 318</span><span>Python</span></span></div>
-                    <div class="gh-row"><span class="repo-name">your-org/infra</span><span class="meta"><span>★
+                    <div class="gh-row blurred"><span class="repo-name">your-org/infra</span><span class="meta"><span>★
                                 98</span><span>Terraform</span></span></div>
                     <div class="gh-overlay">
                         <div>
@@ -2015,10 +2018,41 @@
                     if (nameEl) nameEl.textContent = authState.user.name || authState.user.login;
                     if (avatarEl) avatarEl.src = authState.user.avatar_url;
                 }
+
+                const ghOverlay = document.querySelector('.gh-overlay');
+                if (ghOverlay) ghOverlay.style.display = 'none';
+
+                fetch('/api/my_repos')
+                    .then(res => res.json())
+                    .then(repos => {
+                        const container = document.getElementById('ghPreviewContainer');
+                        if (container && Array.isArray(repos)) {
+                            container.querySelectorAll('.gh-row').forEach(e => e.remove());
+                            repos.slice(0, 4).forEach(repo => {
+                                const row = document.createElement('div');
+                                row.className = 'gh-row';
+                                row.style.cursor = 'pointer';
+                                row.innerHTML = `<span class="repo-name" style="flex:1;">${repo.full_name}</span><span class="meta"><span>★ ${repo.stargazers_count || 0}</span><span>${repo.language || 'Unknown'}</span></span>`;
+                                row.onclick = () => {
+                                    const repoInput = document.getElementById('repoInput');
+                                    if (repoInput) {
+                                        repoInput.value = repo.full_name;
+                                        document.getElementById('analyzeForm').requestSubmit();
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }
+                                };
+                                container.appendChild(row);
+                            });
+                        }
+                    })
+                    .catch(err => console.error('Failed to fetch repos', err));
             } else {
                 if (loginArea) loginArea.style.display = 'block';
                 if (userArea) userArea.style.display = 'none';
                 if (wrapper) wrapper.classList.add('locked');
+                
+                const ghOverlay = document.querySelector('.gh-overlay');
+                if (ghOverlay) ghOverlay.style.display = 'grid';
             }
         }
 
