@@ -19,10 +19,13 @@ BASE_DIR = Path(__file__).resolve().parent
 SNAPSHOT_DIR = BASE_DIR / "snapshots"
 SNAPSHOT_DIR.mkdir(exist_ok=True)
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 # Load local .env file if present
 load_dotenv(BASE_DIR / ".env")
 
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path='')
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 _sk = os.environ.get("SECRET_KEY")
 if not _sk:
     LOGGER.warning(
@@ -96,7 +99,7 @@ def login() -> Any:
     session["oauth_state"] = state
 
     # Prefer explicit REDIRECT_URI from environment (must match GitHub app)
-    redirect_uri = REDIRECT_URI or url_for("oauth_callback", _external=True)
+    redirect_uri = REDIRECT_URI or "https://devcity-ai-1.onrender.com/oauth/callback"
     params = {
         "client_id": GITHUB_CLIENT_ID,
         "redirect_uri": redirect_uri,
@@ -127,7 +130,7 @@ def oauth_callback() -> Any:
         return "Invalid OAuth state. Please try logging in again.", 400
 
     # Compute redirect_uri used in the flow (must match GitHub app)
-    redirect_uri = REDIRECT_URI or url_for("oauth_callback", _external=True)
+    redirect_uri = REDIRECT_URI or "https://devcity-ai-1.onrender.com/oauth/callback"
 
     token_res = requests.post(
         "https://github.com/login/oauth/access_token",
