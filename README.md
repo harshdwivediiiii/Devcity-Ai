@@ -1,42 +1,44 @@
-## DevCity AI – ML-Powered Code Health Map
+# DevCity AI – ML-Powered Code Health Map
 
-DevCity AI scans a GitHub repository, turns it into a 3D city, and now also adds
-data-driven risk and anomaly scores per file. It is designed to showcase end-to-end
-data engineering, data science, and ML engineering skills for DS/ML roles.
+DevCity AI transforms GitHub repositories into interactive 3D city visualizations, augmented with data-driven risk and anomaly scoring. Engineered as an end-to-end machine learning system, this project demonstrates production-grade data engineering, predictive modeling, and full-stack architecture for real-world software analytics.
+
 This project is now live at: 
-### What it does
 
-- Scans a GitHub repository and computes per-file metrics (size, complexity, layout).
-- Stores all snapshot and file metrics in a SQLite database.
-- Provides notebooks to explore metrics and train:
-  - A supervised **risk model** (high-risk file classifier).
-  - An **anomaly detection model** (IsolationForest).
-- Serves models in the Flask app to attach `risk_score` and `anomaly_score`
-  to each file in every new snapshot.
-- Visualizes overall project stats and ML scores in a 3D dashboard.
+## System Overview
 
-### GitHub login (OAuth)
+The core pipeline automatically engineers features from raw source code to surface actionable machine learning insights:
 
-This project supports optional **GitHub OAuth login**:
+- **Automated Feature Engineering**: Scans GitHub repositories to extract and compute complex per-file metrics (size, component structure, software complexity).
+- **Data Persistence**: Maintains historical snapshot state and file-level metrics inside a centralized SQLite database.
+- **Data Science Sandbox**: Provides a suite of Jupyter notebooks for exploratory data analysis and model training:
+  - A supervised **Risk Classification Model** to predictably identify architectural bottlenecks and high-risk technical debt.
+  - An **Anomaly Detection Model** robustly tuned to flag critical structural deviations.
+- **Real-Time ML Inference**: Serves custom machine learning models directly through the Flask backend infrastructure to attach a `risk_score` and `anomaly_score` dynamically to every compiled file.
+- **3D Interactive Insights**: Aggregates the respective machine learning predictions and repository scaling data into a modern, responsive 3D visualization dashboard.
 
-- **Public (no login)**: You can still analyze **public repositories** via the Analyze button.
-- **Login required**: Access to the **Saved Analyses / snapshot dashboard** (snapshots list, timeline slider, snapshot diffs) is gated behind GitHub login.
+## Authentication & Security
 
-To enable OAuth, set:
+DevCity AI features segmented authorization via secure **GitHub OAuth integration**:
 
-- `GITHUB_CLIENT_ID`
-- `GITHUB_CLIENT_SECRET`
-- `SECRET_KEY` (recommended for stable sessions; otherwise a random key is used per run)
+- **Public Access**: Unauthenticated users maintain robust access to trigger the underlying analysis pipeline on public-facing repositories.
+- **Authenticated Access**: Advanced features—including the custom saved analyses dashboard, historical timeline slider, and comparative snapshot diffs—are securely gated behind GitHub identity verification.
 
-Optional:
+To enable OAuth in your environment, configure the following keys:
 
-- `GITHUB_OAUTH_SCOPES` (default: `read:user`)
+- `GITHUB_CLIENT_ID`: Your registered GitHub application client ID.
+- `GITHUB_CLIENT_SECRET`: Your registered GitHub application secret.
+- `SECRET_KEY`: Cryptographically secure string for establishing stable session persistence (falls back to a random key rotation per-run if omitted).
 
-### Running the app
+*Optional Configuration:*
+- `GITHUB_OAUTH_SCOPES`: Expand or restrict permission access (default: `read:user`).
+
+## Local Installation
+
+Prepare the environment dependencies and launch the inference server locally:
 
 ```bash
 pip install -r requirements.txt
 python app.py
 ```
 
-Then visit `http://localhost:5100` in your browser.
+Once initialized, the graphical dashboard will be available at `http://localhost:5100`.
