@@ -1,0 +1,36 @@
+# Virtual Environment
+venv/
+.env/
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# SQLite DB (optional: keep or ignore depending on use)
+codecity.db
+
+# Snapshots (optional: if large or generated)
+snapshots/
+
+# Model artefacts (optional: usually large files)
+models/artefacts/
+
+# VS Code
+.vscode/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp

@@ -1,0 +1,9 @@
+Flask==3.0.3
+gunicorn==25.3.0
+lizard==1.21.3
+requests==2.32.3
+squarify==0.4.4
+pandas==3.0.2
+scikit-learn==1.5.1
+joblib==1.4.2
+python-dotenv==0.21.0
