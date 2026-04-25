@@ -2496,23 +2496,43 @@
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const repo = input.value.trim();
+
+                // 🔐 Frontend Auth Guard
+                const me = await fetch("/api/me", { credentials: "include" });
+                const auth = await me.json();
+                if (!auth.authenticated) {
+                    window.location.href = "/login";
+                    return;
+                }
+
                 if (!repo) { setStatus('Paste a GitHub repo (e.g. vercel/next.js)', 'error'); return; }
                 btn.disabled = true;
                 setStatus('Fetching repo tree, scoring files, asking the AI…', 'loading');
+                
                 try {
-                    const res = await fetch('/api/public/analyze', {
+                    const res = await fetch('/api/analyze', {
                         method: 'POST',
+                        credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ repo }),
+                        body: JSON.stringify({ repo_url: repo }),
                     });
-                    const data = await res.json();
+                    
+                    const text = await res.text();
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (err) {
+                        throw new Error("Backend returned non-JSON response: " + text.slice(0, 50));
+                    }
+
                     if (!res.ok) throw new Error(data.error || 'Analyze failed');
                     // Persist for city.html
                     try { localStorage.setItem('cityData', JSON.stringify(data)); } catch { }
                     applyInsights(data);
-                    setStatus(`✓ Analyzed ${data.repo.full_name} · ${data.files.length} files. Opening city…`, 'success');
+                    setStatus(`✓ Analyzed ${data.snapshot?.repo_url || repo} · ${data.snapshot?.file_count || 0} files. Opening city…`, 'success');
                     setTimeout(() => { window.location.href = 'city.html'; }, 900);
                 } catch (err) {
+                    console.error("Analysis Error:", err);
                     setStatus('✗ ' + (err.message || 'Could not analyze that repo'), 'error');
                 } finally {
                     btn.disabled = false;

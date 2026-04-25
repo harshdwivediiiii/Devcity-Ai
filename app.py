@@ -199,6 +199,10 @@ def analyze() -> Any:
       "github_token": "optional GitHub personal access token"
     }
     """
+    guard = _login_required()
+    if guard:
+        return guard
+
     data = request.get_json(silent=True) or {}
     repo_url = (data.get('repo_url') or '').strip()
     label = (data.get('label') or '').strip()
