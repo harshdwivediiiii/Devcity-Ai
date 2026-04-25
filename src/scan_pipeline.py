@@ -89,42 +89,33 @@ def _apply_city_layout(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return city_data
 
 
+from ml.feature_builder import build_features
+from ml.risk_model import compute_risk_score
+from ml.anomaly_detector import detect_anomalies
+
 def score_files(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     Attach ``risk_score`` and ``anomaly_score`` to each record.
-    Returns records with ``None`` scores if models are unavailable.
+    Leverages ML feature engineering, risk scoring, and anomaly detection layers.
     """
     if not records:
         return records
 
-    import pandas as pd
+    # 1. Feature Engineering Layer
+    features_list = [build_features(record) for record in records]
 
-    risk_model, anomaly_model = load_models()
-    if risk_model is None:
-        for record in records:
-            record["risk_score"] = None
-            record["anomaly_score"] = None
-        return records
+    # 2. Anomaly Detection Layer (Batch calculation over all items)
+    anomaly_scores = detect_anomalies(features_list)
 
-    df = pd.DataFrame(records).reindex(columns=FEATURE_COLS).fillna(0)
-
-    scaler, classifier = risk_model
-    features = scaler.transform(df)
-    probabilities = classifier.predict_proba(features)[:, 1]
-    for record, probability in zip(records, probabilities):
-        record["risk_score"] = round(float(probability), 4)
-
-    if anomaly_model is None:
-        for record in records:
-            record["anomaly_score"] = None
-        return records
-
-    raw_scores = anomaly_model.decision_function(features)
-    lo = float(raw_scores.min())
-    hi = float(raw_scores.max())
-    span = hi - lo if hi != lo else 1.0
-    for record, value in zip(records, raw_scores):
-        record["anomaly_score"] = round(float(1.0 - ((float(value) - lo) / span)), 4)
+    # 3. Attach scores
+    for i, record in enumerate(records):
+        features = features_list[i]
+        
+        # Calculate Risk Score from ML Risk Model
+        record["risk_score"] = compute_risk_score(features)
+        
+        # Attach Anomaly Score
+        record["anomaly_score"] = anomaly_scores[i]
 
     return records
 
