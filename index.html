@@ -1,1336 +1,2295 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevCity AI – Repository Risk Map</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>DevCity AI — See Your Code as a City</title>
+    <meta name="description"
+        content="DevCity AI turns any GitHub repository into an interactive 3D city. Spot risk, complexity and tech debt at a glance — powered by AI." />
+    <meta property="og:title" content="DevCity AI — See Your Code as a City" />
+    <meta property="og:description"
+        content="Turn any GitHub repo into a 3D city. AI-powered risk, complexity and architecture insights." />
+    <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet" />
     <style>
-        .widget-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 10px;
+        :root {
+            --bg: #05060a;
+            --bg-2: #0a0d18;
+            --surface: rgba(15, 19, 33, 0.65);
+            --surface-2: rgba(22, 28, 48, 0.55);
+            --border: rgba(120, 140, 200, 0.14);
+            --border-strong: rgba(140, 160, 220, 0.28);
+            --text: #e8ecf7;
+            --text-dim: #aab1c8;
+            --text-faint: #6b7493;
+            --accent: #7c5cff;
+            --accent-2: #22d3ee;
+            --accent-3: #34d399;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --grad: linear-gradient(135deg, #7c5cff 0%, #22d3ee 60%, #34d399 100%);
+            --grad-soft: linear-gradient(135deg, rgba(124, 92, 255, .18), rgba(34, 211, 238, .12));
+            --shadow-glow: 0 30px 80px -30px rgba(124, 92, 255, .55);
+            --radius: 16px;
         }
 
-        .widget-kicker {
-            margin-bottom: 6px;
-            color: var(--text-faint);
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
+        * {
+            box-sizing: border-box;
         }
 
-        .widget-copy {
-            margin: 0 0 14px 0;
-            color: var(--text-dim);
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        .snapshot-meta {
-            color: var(--text-dim);
-            font-size: 11px;
-        }
-
-        .snapshot-label {
-            display: block;
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
             color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        body.product-mode {
+            --accent: #6366f1;
+            --accent-2: #06b6d4;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        code,
+        .mono {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        /* Ambient bg */
+        .bg-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(900px 600px at 12% -10%, rgba(124, 92, 255, .18), transparent 60%),
+                radial-gradient(900px 600px at 100% 10%, rgba(34, 211, 238, .14), transparent 60%),
+                radial-gradient(800px 600px at 50% 100%, rgba(52, 211, 153, .10), transparent 60%);
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(140, 160, 220, .05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(140, 160, 220, .05) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+        }
+
+        /* Nav */
+        nav.top {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            background: rgba(5, 6, 10, .55);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 14px 22px;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: var(--grad);
+            box-shadow: 0 6px 20px -6px rgba(124, 92, 255, .6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brand-mark::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 5px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, 0));
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 22px;
+            margin-left: 18px;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            font-size: 14px;
+            font-weight: 500;
+            transition: color .2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .nav-spacer {
+            flex: 1;
+        }
+
+        .mode-toggle {
+            display: inline-flex;
+            padding: 4px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--surface-2);
             font-size: 12px;
             font-weight: 600;
         }
 
-        /* Draggable widgets: drag from title bar (collapse buttons still click normally). */
-        .snapshot-panel > h3,
-        .repo-panel > h3,
-        .legend > h3,
-        .diff-legend > h3,
-        .stats-panel > h3,
-        .search-panel > h3,
-        .sidebar > h3,
-        .risk-panel > h3 {
-            user-select: none;
-            cursor: grab;
+        .mode-toggle button {
+            background: transparent;
+            color: var(--text-dim);
+            border: 0;
+            padding: 6px 12px;
+            border-radius: 999px;
         }
-        .snapshot-panel > h3:active,
-        .repo-panel > h3:active,
-        .legend > h3:active,
-        .diff-legend > h3:active,
-        .stats-panel > h3:active,
-        .search-panel > h3:active,
-        .sidebar > h3:active,
-        .risk-panel > h3:active {
-            cursor: grabbing;
+
+        .mode-toggle button.active {
+            background: var(--grad);
+            color: #0a0a14;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform .15s, border-color .2s, background .2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(180, 200, 255, .4);
+        }
+
+        .btn-primary {
+            background: var(--grad);
+            color: #0a0a14;
+            border: 0;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.08);
+        }
+
+        .btn-sm {
+            padding: 7px 12px;
+            font-size: 13px;
+            border-radius: 10px;
+        }
+
+        .btn .kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 2px 6px;
+            border: 1px solid var(--border-strong);
+            border-radius: 5px;
+            opacity: .8;
+        }
+
+        /* Layout */
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 22px;
+        }
+
+        section {
+            padding: 96px 0;
+            position: relative;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border: 1px solid var(--border-strong);
+            border-radius: 999px;
+            background: var(--surface-2);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            letter-spacing: .04em;
+        }
+
+        .eyebrow .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-3);
+            box-shadow: 0 0 10px var(--accent-3);
+        }
+
+        h1,
+        h2,
+        h3 {
+            letter-spacing: -.025em;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: clamp(40px, 6vw, 72px);
+            font-weight: 800;
+            line-height: 1.02;
+        }
+
+        h2 {
+            font-size: clamp(28px, 3.6vw, 44px);
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .gradient-text {
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .lead {
+            color: var(--text-dim);
+            font-size: clamp(16px, 1.4vw, 19px);
+            line-height: 1.55;
+            max-width: 620px;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .center .lead {
+            margin: 14px auto 0;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 70px 0 60px;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .hero h1 .gradient-text {
+            display: inline-block;
+        }
+
+        .hero .lead {
+            margin-top: 22px;
+        }
+
+        .analyze-card {
+            margin-top: 30px;
+            padding: 18px;
+            border: 1px solid var(--border-strong);
+            border-radius: 18px;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .analyze-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .analyze-row .gh-pre {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-left: 12px;
+            color: var(--text-faint);
+            font-size: 14px;
+        }
+
+        .analyze-input {
+            flex: 1;
+            min-width: 0;
+            background: transparent;
+            border: 0;
+            outline: 0;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            padding: 12px 8px;
+        }
+
+        .sample-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .chip {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface-2);
+            color: var(--text-dim);
+            font-size: 12px;
+            font-weight: 500;
+            transition: all .15s;
+        }
+
+        .chip:hover {
+            color: var(--text);
+            border-color: rgba(180, 200, 255, .4);
+        }
+
+        .analyze-status {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-faint);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 18px;
+        }
+
+        .analyze-status.error {
+            color: #fca5a5;
+        }
+
+        .analyze-status.success {
+            color: var(--accent-3);
+        }
+
+        .spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, .2);
+            border-top-color: var(--accent-2);
+            border-radius: 50%;
+            animation: spin .9s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hero-trust {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 28px;
+            margin-top: 28px;
+            color: var(--text-faint);
+            font-size: 13px;
+        }
+
+        .hero-trust span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hero-trust svg {
+            width: 14px;
+            height: 14px;
+            color: var(--accent-3);
+        }
+
+        /* 3D hero canvas */
+        .hero-stage {
+            position: relative;
+            aspect-ratio: 1.05/1;
+            border: 1px solid var(--border-strong);
+            border-radius: 24px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0a0d18 0%, #060810 100%);
+            box-shadow: 0 40px 100px -40px rgba(124, 92, 255, .45), inset 0 0 0 1px rgba(255, 255, 255, .02);
+        }
+
+        .hero-stage canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .stage-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(80% 60% at 50% 110%, rgba(124, 92, 255, .25), transparent 70%);
+        }
+
+        .stage-badge {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, .45);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-dim);
+            font-weight: 600;
+            letter-spacing: .05em;
+        }
+
+        .stage-tooltip {
+            position: absolute;
+            pointer-events: none;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, .75);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-strong);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text);
+            transform: translate(-50%, -120%);
+            opacity: 0;
+            transition: opacity .15s;
+            z-index: 4;
+        }
+
+        .stage-tooltip b {
+            color: var(--accent-2);
+        }
+
+        .stage-controls {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .stage-controls button {
+            background: rgba(0, 0, 0, .55);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-strong);
+            color: var(--text-dim);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .stage-controls button:hover {
+            color: var(--text);
+        }
+
+        .stage-fileinfo {
+            position: absolute;
+            left: 14px;
+            bottom: 14px;
+            right: 60px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, .55);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-strong);
+            font-size: 12px;
+            color: var(--text-dim);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .stage-fileinfo .name {
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .stage-fileinfo .pill {
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(124, 92, 255, .15);
+            color: #c4b5fd;
+            border: 1px solid rgba(124, 92, 255, .35);
+        }
+
+        .stage-fileinfo .pill.risk-high {
+            background: rgba(239, 68, 68, .15);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, .35);
+        }
+
+        .stage-fileinfo .pill.risk-med {
+            background: rgba(245, 158, 11, .15);
+            color: #fcd34d;
+            border-color: rgba(245, 158, 11, .35);
+        }
+
+        .stage-fileinfo .pill.risk-low {
+            background: rgba(52, 211, 153, .15);
+            color: #6ee7b7;
+            border-color: rgba(52, 211, 153, .35);
+        }
+
+        /* Stats counter */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 60px;
+        }
+
+        .stat {
+            padding: 22px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            backdrop-filter: blur(14px);
+        }
+
+        .stat .num {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -.03em;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat .lbl {
+            color: var(--text-faint);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        /* Score widget */
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 32px;
+            margin-top: 36px;
+            align-items: center;
+        }
+
+        .score-card {
+            padding: 28px;
+            border-radius: 20px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+        }
+
+        .score-row {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .score-ring {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            flex-shrink: 0;
+        }
+
+        .score-ring svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .score-ring .track {
+            stroke: rgba(255, 255, 255, .06);
+        }
+
+        .score-ring .bar {
+            stroke: url(#scoreGrad);
+            transition: stroke-dashoffset 1.2s cubic-bezier(.2, .7, .3, 1);
+        }
+
+        .score-ring .center {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            text-align: center;
+        }
+
+        .score-ring .num {
+            font-size: 38px;
+            font-weight: 800;
+            letter-spacing: -.04em;
+        }
+
+        .score-ring .lbl {
+            font-size: 11px;
+            color: var(--text-faint);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .score-meta {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .score-meta .item {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+        }
+
+        .score-meta .k {
+            font-size: 11px;
+            color: var(--text-faint);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .score-meta .v {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .v.risk-low {
+            color: var(--accent-3);
+        }
+
+        .v.risk-med {
+            color: var(--warn);
+        }
+
+        .v.risk-high {
+            color: var(--danger);
+        }
+
+        /* Pipeline */
+        .pipeline {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 40px;
+        }
+
+        .pipe-step {
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+            text-align: center;
+            position: relative;
+        }
+
+        .pipe-step .icon {
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 12px;
+            border-radius: 12px;
+            background: var(--grad-soft);
+            border: 1px solid var(--border-strong);
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+        }
+
+        .pipe-step.active {
+            border-color: rgba(124, 92, 255, .6);
+            box-shadow: 0 0 24px -6px rgba(124, 92, 255, .5);
+        }
+
+        .pipe-step.active .icon {
+            background: var(--grad);
+            color: #0a0a14;
+        }
+
+        .pipe-step h4 {
+            margin: 0 0 4px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .pipe-step p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-faint);
+        }
+
+        /* Heatmap preview */
+        .heatmap-card {
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 4px;
+            margin-top: 14px;
+        }
+
+        .heat-cell {
+            aspect-ratio: 1/1;
+            border-radius: 4px;
+            transition: transform .15s;
+            cursor: pointer;
+        }
+
+        .heat-cell:hover {
+            transform: scale(1.4);
+            z-index: 2;
+            position: relative;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            gap: 14px;
+            margin-top: 14px;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-faint);
+        }
+
+        .heatmap-legend .swatch {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        /* AI panel */
+        .ai-panel {
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+        }
+
+        .ai-row {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .ai-row:first-of-type {
+            border-top: 0;
+            padding-top: 0;
+        }
+
+        .ai-row .badge {
+            flex-shrink: 0;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            height: max-content;
+        }
+
+        .badge.high {
+            background: rgba(239, 68, 68, .15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, .3);
+        }
+
+        .badge.med {
+            background: rgba(245, 158, 11, .15);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, .3);
+        }
+
+        .ai-row .body .file {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .ai-row .body .reason {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        /* Compare */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 36px;
+        }
+
+        .compare-card {
+            padding: 24px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .compare-card.ours {
+            border-color: rgba(124, 92, 255, .45);
+            box-shadow: 0 20px 60px -30px rgba(124, 92, 255, .5);
+            position: relative;
+        }
+
+        .compare-card.ours::before {
+            content: 'DevCity AI';
+            position: absolute;
+            top: -10px;
+            right: 16px;
+            background: var(--grad);
+            color: #0a0a14;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .compare-card h4 {
+            margin: 0 0 8px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .compare-card .feat {
+            display: flex;
+            gap: 8px;
+            padding: 8px 0;
+            font-size: 13px;
+            color: var(--text-dim);
+            border-top: 1px solid var(--border);
+        }
+
+        .compare-card .feat:first-of-type {
+            border-top: 0;
+        }
+
+        .compare-card .feat svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .feat.yes svg {
+            color: var(--accent-3);
+        }
+
+        .feat.no svg {
+            color: var(--text-faint);
+        }
+
+        /* GitHub repo preview */
+        .gh-preview {
+            padding: 24px;
+            border-radius: 18px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+        }
+
+        .gh-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-top: 8px;
+            filter: blur(4px);
+            opacity: .7;
+        }
+
+        .gh-row:nth-child(odd) {
+            background: var(--surface-2);
+        }
+
+        .gh-row .repo-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .gh-row .meta {
+            font-size: 12px;
+            color: var(--text-faint);
+            display: flex;
+            gap: 12px;
+        }
+
+        .gh-overlay {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(5, 6, 10, .4) 0%, rgba(5, 6, 10, .85) 100%);
+            border-radius: 18px;
+        }
+
+        /* Onboarding */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 36px;
+        }
+
+        .step {
+            padding: 22px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            position: relative;
+        }
+
+        .step .n {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-2);
+            letter-spacing: .12em;
+        }
+
+        .step h4 {
+            margin: 8px 0 6px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .step p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        /* Final CTA */
+        .final-cta {
+            margin: 40px 0 80px;
+            padding: 56px 28px;
+            border-radius: 28px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .final-cta::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(80% 70% at 50% 0%, rgba(124, 92, 255, .25), transparent 60%);
+            pointer-events: none;
+        }
+
+        .final-cta h2 {
+            position: relative;
+        }
+
+        .final-cta .lead {
+            position: relative;
+        }
+
+        .final-cta .actions {
+            position: relative;
+            margin-top: 28px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        footer {
+            padding: 30px 0 60px;
+            color: var(--text-faint);
+            font-size: 13px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            margin-top: 30px;
+        }
+
+        /* Command bar */
+        .cmd-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .55);
+            backdrop-filter: blur(6px);
+            z-index: 100;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 14vh;
+        }
+
+        .cmd-overlay.open {
+            display: flex;
+        }
+
+        .cmd-box {
+            width: min(560px, 92vw);
+            border-radius: 16px;
+            border: 1px solid var(--border-strong);
+            background: rgba(15, 19, 33, .92);
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+            box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .7);
+        }
+
+        .cmd-input {
+            width: 100%;
+            background: transparent;
+            border: 0;
+            outline: 0;
+            color: var(--text);
+            padding: 18px 20px;
+            font-size: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cmd-list {
+            max-height: 60vh;
+            overflow: auto;
+            padding: 6px;
+        }
+
+        .cmd-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-dim);
+            cursor: pointer;
+        }
+
+        .cmd-item.active,
+        .cmd-item:hover {
+            background: var(--surface-2);
+            color: var(--text);
+        }
+
+        .cmd-item .k {
+            font-size: 11px;
+            color: var(--text-faint);
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* AI mini chat */
+        .chat-fab {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 60;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            border: 0;
+            background: var(--grad);
+            box-shadow: 0 10px 30px -10px rgba(124, 92, 255, .7);
+            color: #0a0a14;
+            font-size: 22px;
+            display: grid;
+            place-items: center;
+        }
+
+        .chat-panel {
+            position: fixed;
+            right: 22px;
+            bottom: 90px;
+            z-index: 61;
+            width: min(360px, 92vw);
+            border-radius: 18px;
+            border: 1px solid var(--border-strong);
+            background: rgba(15, 19, 33, .92);
+            backdrop-filter: blur(20px);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .7);
+        }
+
+        .chat-panel.open {
+            display: flex;
+        }
+
+        .chat-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-head .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-3);
+            box-shadow: 0 0 8px var(--accent-3);
+        }
+
+        .chat-head h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .chat-msgs {
+            padding: 14px;
+            max-height: 280px;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .chat-msg {
+            padding: 10px 12px;
+            border-radius: 12px;
+            max-width: 85%;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            background: var(--grad-soft);
+            border: 1px solid var(--border-strong);
+        }
+
+        .chat-msg.bot {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+        }
+
+        .chat-form {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .chat-form input {
+            flex: 1;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .chat-form input:focus {
+            border-color: var(--accent);
+        }
+
+        .chat-form button {
+            background: var(--grad);
+            border: 0;
+            color: #0a0a14;
+            font-weight: 700;
+            padding: 0 14px;
+            border-radius: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .score-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .compare-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .steps {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            section {
+                padding: 70px 0;
+            }
+        }
+
+        @media (max-width: 560px) {
+            main {
+                padding: 0 16px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .pipeline {
+                grid-template-columns: 1fr;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .analyze-row {
+                flex-wrap: wrap;
+            }
+
+            .analyze-row .gh-pre {
+                display: none;
+            }
+
+            .hero-stage {
+                aspect-ratio: 1/1;
+            }
+
+            .stage-fileinfo {
+                right: 14px;
+            }
+        }
+
+        /* Reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity .8s ease, transform .8s ease;
+        }
+
+        .reveal.in {
+            opacity: 1;
+            transform: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="ambient-layer ambient-grid"></div>
-    <div class="ambient-layer ambient-glow ambient-glow-a"></div>
-    <div class="ambient-layer ambient-glow ambient-glow-b"></div>
+    <div class="bg-layer"></div>
+    <div class="bg-grid"></div>
 
-    <div class="snapshot-panel">
-        <div class="widget-header">
-            <div>
-                <div class="widget-kicker">Timeline</div>
-                <h3>Saved Analyses</h3>
+    <nav class="top">
+        <div class="nav-inner">
+            <a href="#top" class="brand">
+                <div class="brand-mark"></div>
+                <span>DevCity <span style="color: var(--text-faint); font-weight: 600;">AI</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="#how">How it works</a>
+                <a href="#insights">AI Insights</a>
+                <a href="#compare">Compare</a>
+                <a href="#start">Get started</a>
             </div>
-        </div>
-        <p class="widget-copy">Browse scan history, scrub across snapshots, and compare architectural drift.</p>
-        <div id="snapshot-list-empty" class="snapshot-meta">No snapshots yet. Run an analysis to create one.</div>
-        <div id="snapshot-list"></div>
-        <div id="snapshot-timeline-container" class="snapshot-meta timeline-stack" style="display: none;">
-            <div class="timeline-label">Time slider</div>
-            <input type="range" id="snapshot-slider" min="0" max="0" value="0">
-            <div id="snapshot-slider-label"></div>
-        </div>
-        <div class="snapshot-actions">
-            <button id="compare-btn" class="compare-button">Compare Snapshots</button>
-            <button id="cancel-compare-btn" class="cancel-button" style="display: none;">Cancel Comparison</button>
-        </div>
-    </div>
-
-    <div class="repo-panel">
-        <div class="hero-kicker">ML-powered repository intelligence</div>
-        <h3>DevCity AI</h3>
-        <p class="hero-copy">Analyze a GitHub repository, surface risky files, and navigate the codebase as a live 3D skyline.</p>
-        <div class="hero-badges">
-            <span class="hero-badge">Complexity + churn</span>
-            <span class="hero-badge">ML risk signals</span>
-            <span class="hero-badge">Snapshot timeline</span>
-        </div>
-        <div class="repo-auth-row">
-            <div class="status-cluster">
-                <div id="auth-badge" class="status-pill status-pill-auth">Not logged in</div>
-                <div id="model-status-pill" class="status-pill status-pill-model">Model status: checking</div>
+            <div class="nav-spacer"></div>
+            <div class="mode-toggle" role="tablist" aria-label="UI mode">
+                <button class="active" data-mode="developer">Developer</button>
+                <button data-mode="product">Product</button>
             </div>
-            <div class="repo-auth-actions">
-                <a id="login-link" href="/login" class="github-button" style="text-decoration:none; display:none;">Login with GitHub</a>
-                <a id="logout-link" href="/logout" class="github-button" style="text-decoration:none; display:none;">Logout</a>
-            </div>
+            <button class="btn btn-sm" id="cmdBtn" aria-label="Open command bar">
+                <span>⌘</span><span>Search</span><span class="kbd">/</span>
+            </button>
+            <a class="btn btn-sm btn-primary" href="#analyze">Launch app</a>
         </div>
-        <div id="my-repos-controls" class="repo-library" style="display:none;">
-            <div class="repo-library-actions">
-                <button id="my-repos-btn" class="analyze-button">My Repositories</button>
-                <button id="analyze-all-btn" class="analyze-button">Analyze All</button>
-            </div>
-            <div id="my-repos-list" class="repo-library-list" style="display:none;"></div>
-            <div id="analyze-all-progress" class="repo-library-progress" style="display:none;"></div>
-        </div>
-        <div class="repo-input-group">
-            <input type="text" id="repo-input" placeholder="GitHub URL (e.g., https://github.com/user/repo)" class="repo-input">
-            <button id="analyze-btn" class="analyze-button">Analyze</button>
-        </div>
-        <input type="text" id="snapshot-label" class="snapshot-label-input" placeholder="Optional snapshot label (e.g., 'Requests v2.32 main')" />
-        <div class="token-info">
-            For larger orgs or private repositories, set a GitHub token:<br>
-            <code>set GITHUB_TOKEN=your_token_here</code> (Windows)<br>
-            <code>export GITHUB_TOKEN=your_token_here</code> (Linux/Mac)
-        </div>
-        <div id="status-message" class="status-message"></div>
-    </div>
+    </nav>
 
-    <div class="legend collapsible-panel">
-        <h3>Complexity Legend<button class="collapse-btn">-</button></h3>
-        <div class="collapsible-content">
-            <div><span class="low-complexity">■</span> 1-5: Simple</div>
-            <div><span class="moderate-complexity">■</span> 6-15: Moderate</div>
-            <div><span class="medium-complexity">■</span> 16-30: Complex</div>
-            <div><span class="high-complexity">■</span> 31-50: Very Complex</div>
-            <div><span class="critical-complexity">■</span> 51+: Highly Complex</div>
-            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #444; font-size: 11px; color: #aaa;">
-                <strong>Building Dimensions:</strong><br>
-                - <strong>Height:</strong> Cyclomatic Complexity<br>
-                - <strong>Area (Width & Depth):</strong> Lines of Code
-            </div>
-        </div>
-    </div>
+    <main id="top">
 
-    <div class="diff-legend collapsible-panel" style="display: none;">
-        <h3>Comparison Legend<button class="collapse-btn">-</button></h3>
-        <div class="collapsible-content">
-            <div><span style="color: #ffff00;">■</span> Added</div>
-            <div><span style="color: #808080;">■</span> Removed</div>
-            <div><span style="color: #ff0000;">■</span> Complexity Increased (Glows)</div>
-            <div><span style="color: #00ff00;">■</span> Complexity Decreased (Glows)</div>
-        </div>
-    </div>
+        <!-- HERO -->
+        <section class="hero">
+            <div class="hero-grid">
+                <div class="reveal">
+                    <span class="eyebrow"><span class="dot"></span> Code intelligence, reimagined</span>
+                    <h1 style="margin-top: 18px;">See your code as a <span class="gradient-text">3D city.</span></h1>
+                    <p class="lead">DevCity AI turns any GitHub repository into an interactive city of buildings — each
+                        file scaled by complexity, colored by risk, and explained by AI.</p>
 
-    <div class="stats-panel collapsible-panel">
-        <h3>Project Statistics<button class="collapse-btn">-</button></h3>
-        <div class="collapsible-content">
-            <div id="stats-content">
-                <div>Total Files: <span id="total-files">0</span></div>
-                <div>Avg Complexity: <span id="avg-complexity">0</span></div>
-                <div>Total Lines: <span id="total-lines">0</span></div>
-                <div>High Complexity Files: <span id="high-risk">0</span></div>
-                <div>Avg Risk Score: <span id="avg-risk-score">0</span></div>
-                <div>Avg Anomaly Score: <span id="avg-anomaly-score">0</span></div>
-            </div>
-            <div class="last-updated">
-                <small><strong>Data Files Updated:</strong></small>
-                <div id="file-timestamps"></div>
-            </div>
-            <button id="refresh-btn" class="refresh-button">🔄 Refresh Current Data</button>
-        </div>
-    </div>
-
-    <div class="search-panel collapsible-panel">
-        <h3>Explore City<button class="collapse-btn">-</button></h3>
-        <div class="collapsible-content">
-            <input type="text" id="search-input" placeholder="Search files..." class="search-input">
-            <div class="filter-buttons">
-                <button id="filter-all" class="filter-btn active">All</button>
-                <button id="filter-simple" class="filter-btn">Simple</button>
-                <button id="filter-moderate" class="filter-btn">Moderate</button>
-                <button id="filter-complex" class="filter-btn">Complex</button>
-                <button id="filter-very-complex" class="filter-btn">Very Complex</button>
-                <button id="filter-highly-complex" class="filter-btn">Highly Complex</button>
-            </div>
-            <div class="view-buttons">
-                <button id="view-top" class="view-btn">Top</button>
-                <button id="view-front" class="view-btn">Front</button>
-                <button id="view-side" class="view-btn">Side</button>
-                <button id="view-3d" class="view-btn active">3D</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="sidebar collapsible-panel">
-        <h3>Building Details<button class="collapse-btn">-</button></h3>
-        <div id="details-content" class="collapsible-content">
-            <div class="detail-empty">
-                <div class="detail-empty-mark">+</div>
-                <p>Click a building to inspect its code health, geometry, and ML signals.</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="risk-panel collapsible-panel">
-        <h3>Risk Insights<button class="collapse-btn">-</button></h3>
-        <div class="collapsible-content">
-            <div class="risk-copy">
-                Top files by ML-estimated risk score.
-            </div>
-            <table class="risk-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>File</th>
-                        <th>Risk</th>
-                        <th>Anomaly</th>
-                        <th>Complexity</th>
-                    </tr>
-                </thead>
-                <tbody id="risk-table-body">
-                    <tr><td colspan="5" style="color:#777;">Run an analysis to see risk insights.</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Three.js core (non-module, global THREE namespace) -->
-    <script src="https://unpkg.com/three@0.136.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.136.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://unpkg.com/three@0.136.0/examples/js/loaders/FontLoader.js"></script>
-    <script src="https://unpkg.com/three@0.136.0/examples/js/geometries/TextGeometry.js"></script>
-
-    <script>
-    // Basic UI wiring for analyze button and snapshots
-    document.addEventListener('DOMContentLoaded', () => {
-        const statusMsg = document.getElementById('status-message');
-        const analyzeBtn = document.getElementById('analyze-btn');
-        const repoInput = document.getElementById('repo-input');
-        const labelInput = document.getElementById('snapshot-label');
-        const snapshotPanel = document.querySelector('.snapshot-panel');
-        const compareBtn = document.getElementById('compare-btn');
-        const cancelCompareBtn = document.getElementById('cancel-compare-btn');
-        const authBadge = document.getElementById('auth-badge');
-        const modelStatusPill = document.getElementById('model-status-pill');
-        const loginLink = document.getElementById('login-link');
-        const logoutLink = document.getElementById('logout-link');
-        const sliderContainer = document.getElementById('snapshot-timeline-container');
-
-        let isAuthenticated = false;
-        async function refreshModelStatus() {
-            if (!modelStatusPill) return;
-            modelStatusPill.textContent = 'Model status: checking';
-            modelStatusPill.style.color = '#9AA3B8';
-            try {
-                const res = await fetch('/api/model_status');
-                if (!res.ok) {
-                    modelStatusPill.textContent = 'Model status: unavailable';
-                    modelStatusPill.style.color = '#F59E0B';
-                    return;
-                }
-                const payload = await res.json();
-                if (payload.trained) {
-                    const version = payload.version ? ` ${payload.version}` : '';
-                    modelStatusPill.textContent = `Model ready${version}`;
-                    modelStatusPill.style.color = '#22C55E';
-                } else {
-                    modelStatusPill.textContent = 'Model not trained yet';
-                    modelStatusPill.style.color = '#F59E0B';
-                }
-            } catch (error) {
-                modelStatusPill.textContent = 'Model status: unavailable';
-                modelStatusPill.style.color = '#F59E0B';
-            }
-        }
-
-        async function refreshAuth() {
-            try {
-                const res = await fetch('/api/me');
-                const payload = await res.json();
-                isAuthenticated = !!payload.authenticated;
-                if (isAuthenticated) {
-                    const u = payload.user || {};
-                    const who = u.login || u.name || 'GitHub user';
-                    authBadge.textContent = `Logged in as ${who}`;
-                    authBadge.style.color = '#00ff88';
-                    if (loginLink) loginLink.style.display = 'none';
-                    if (logoutLink) logoutLink.style.display = 'inline-block';
-                    if (snapshotPanel) snapshotPanel.style.display = 'block';
-                    // Show my repos controls and load repos
-                    const myReposControls = document.getElementById('my-repos-controls');
-                    const myReposList = document.getElementById('my-repos-list');
-                    if (myReposControls) myReposControls.style.display = 'block';
-                    if (myReposList) myReposList.style.display = 'none';
-                    if (document.getElementById('my-repos-btn')) {
-                        document.getElementById('my-repos-btn').addEventListener('click', fetchMyRepos);
-                    }
-                    if (document.getElementById('analyze-all-btn')) {
-                        document.getElementById('analyze-all-btn').addEventListener('click', analyzeAllRepos);
-                    }
-                } else {
-                    authBadge.textContent = 'Not logged in';
-                    authBadge.style.color = '#aaa';
-                    if (loginLink) loginLink.style.display = 'inline-block';
-                    if (logoutLink) logoutLink.style.display = 'none';
-                    // Hide snapshot UI; analyzing remains available
-                    if (snapshotPanel) snapshotPanel.style.display = 'none';
-                    if (sliderContainer) sliderContainer.style.display = 'none';
-                    if (compareBtn) compareBtn.disabled = true;
-                    if (cancelCompareBtn) cancelCompareBtn.disabled = true;
-                }
-            } catch (e) {
-                // If auth check fails, default to not authenticated.
-                isAuthenticated = false;
-                if (authBadge) {
-                    authBadge.textContent = 'Not logged in';
-                    authBadge.style.color = '#aaa';
-                }
-                if (loginLink) loginLink.style.display = 'inline-block';
-                if (logoutLink) logoutLink.style.display = 'none';
-                if (snapshotPanel) snapshotPanel.style.display = 'none';
-                if (sliderContainer) sliderContainer.style.display = 'none';
-            }
-        }
-
-        async function fetchMyRepos() {
-            const listEl = document.getElementById('my-repos-list');
-            const btn = document.getElementById('my-repos-btn');
-            const progressEl = document.getElementById('analyze-all-progress');
-            if (!listEl) return;
-
-            // Toggle: if currently visible, hide and reset label
-            if (listEl.style.display === 'block') {
-                listEl.style.display = 'none';
-                if (progressEl) progressEl.style.display = 'none';
-                if (btn) btn.textContent = 'My Repositories';
-                return;
-            }
-
-            // Otherwise show and load
-            listEl.style.display = 'block';
-            if (btn) btn.textContent = 'Hide Repositories';
-            listEl.innerHTML = '⏳ Loading repositories...';
-            try {
-                const res = await fetch('/api/my_repos');
-                if (!res.ok) {
-                    if (res.status === 401) {
-                        listEl.innerHTML = '<div style="color:#ffcc66;">Login required to view repositories.</div>';
-                        return;
-                    }
-                    const text = await res.text();
-                    listEl.innerHTML = `<div style="color:#ff6666;">Error loading repos: ${res.status}</div>`;
-                    console.error('Repo fetch failed', res.status, text);
-                    return;
-                }
-                const repos = await res.json();
-                if (!Array.isArray(repos) || !repos.length) {
-                    listEl.innerHTML = '<div style="color:#999">No repositories found.</div>';
-                    return;
-                }
-                // Render a simple list
-                const html = repos.map(r => {
-                    const priv = r.private ? '🔒' : '🔓';
-                    const desc = r.description ? `<div style="color:#aaa; font-size:11px; margin-top:4px">${escapeHtml(r.description)}</div>` : '';
-                    return `
-                        <div style="padding:8px; border-bottom:1px solid #111;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                                <div>
-                                    <a href="${r.html_url}" target="_blank" style="color:#00ffcc; font-weight:600; text-decoration:none;">${escapeHtml(r.full_name)}</a>
-                                    <div style="color:#888; font-size:11px;">${r.language || ''} • ⭐ ${r.stargazers_count || 0} • Forks ${r.forks_count || 0}</div>
-                                </div>
-                                <div style="font-size:12px; color:#bbb">${priv}</div>
-                            </div>
-                            ${desc}
+                    <form class="analyze-card" id="analyzeForm" autocomplete="off">
+                        <div class="analyze-row">
+                            <span class="gh-pre">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.1.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.36-3.37-1.36-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84a9.4 9.4 0 0 1 2.5.34c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.26C22 6.58 17.52 2 12 2z" />
+                                </svg>
+                                <span>github.com/</span>
+                            </span>
+                            <input class="analyze-input" id="repoInput" type="text" placeholder="vercel/next.js"
+                                spellcheck="false" />
+                            <button class="btn btn-primary" id="analyzeBtn" type="submit">Analyze repo</button>
                         </div>
-                    `;
-                }).join('');
-                listEl.innerHTML = html;
-                if (btn) btn.textContent = 'Hide Repositories';
-            } catch (e) {
-                console.error('Failed to load repos', e);
-                listEl.innerHTML = `<div style="color:#ff6666;">Error: ${escapeHtml(e.message || String(e))}</div>`;
-                if (btn) btn.textContent = 'My Repositories';
-            }
-        }
+                        <div class="sample-row">
+                            <span style="font-size: 12px; color: var(--text-faint); padding: 6px 0;">Try:</span>
+                            <button class="chip" type="button" data-sample="facebook/react">⚛️ React</button>
+                            <button class="chip" type="button" data-sample="expressjs/express">🟢 Node backend</button>
+                            <button class="chip" type="button" data-sample="huggingface/transformers">🤖 AI
+                                project</button>
+                            <button class="chip" type="button" data-sample="tailwindlabs/tailwindcss">🎨
+                                Tailwind</button>
+                        </div>
+                        <div class="analyze-status" id="analyzeStatus"></div>
+                    </form>
 
-        let _analyzeAllRunning = false;
-        async function analyzeAllRepos() {
-            if (_analyzeAllRunning) return;
-            _analyzeAllRunning = true;
-            const progressEl = document.getElementById('analyze-all-progress');
-            const listEl = document.getElementById('my-repos-list');
-            if (!progressEl) return;
-            progressEl.style.display = 'block';
-            progressEl.innerHTML = 'Preparing...';
+                    <div class="hero-trust">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <path d="M5 12l5 5L20 7" />
+                            </svg> No signup to demo</span>
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <path d="M5 12l5 5L20 7" />
+                            </svg> Public repos out of the box</span>
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <path d="M5 12l5 5L20 7" />
+                            </svg> AI insights powered by Lovable AI</span>
+                    </div>
+                </div>
 
-            // Ensure we have the repos loaded
-            if (!listEl || listEl.style.display === 'none' || !listEl.innerHTML.trim()) {
-                await fetchMyRepos();
-            }
+                <!-- 3D HERO STAGE -->
+                <div class="hero-stage reveal" id="heroStage">
+                    <span class="stage-badge">LIVE 3D • Drag to rotate</span>
+                    <canvas id="heroCanvas"></canvas>
+                    <div class="stage-overlay"></div>
+                    <div class="stage-tooltip" id="stageTooltip"></div>
+                    <div class="stage-fileinfo" id="stageInfo">
+                        <span class="name">src/app/page.tsx</span>
+                        <span class="pill">324 LOC</span>
+                        <span class="pill risk-low">Healthy</span>
+                    </div>
+                    <div class="stage-controls">
+                        <button id="stageReset" title="Reset view">⟲</button>
+                        <button id="stageFly" title="Fly through">▶</button>
+                    </div>
+                </div>
+            </div>
 
-            // Load repos from backend (fresh)
-            let repos = [];
-            try {
-                const res = await fetch('/api/my_repos');
-                if (!res.ok) {
-                    progressEl.innerHTML = `<div style="color:#ff6666">Failed to list repos: ${res.status}</div>`;
-                    _analyzeAllRunning = false;
-                    return;
+            <!-- LIVE STATS -->
+            <div class="stats">
+                <div class="stat reveal">
+                    <div class="num" data-count="48329">0</div>
+                    <div class="lbl">Repositories analyzed</div>
+                </div>
+                <div class="stat reveal">
+                    <div class="num" data-count="14823490">0</div>
+                    <div class="lbl">Files processed</div>
+                </div>
+                <div class="stat reveal">
+                    <div class="num" data-count="9217">0</div>
+                    <div class="lbl">Active developers</div>
+                </div>
+                <div class="stat reveal">
+                    <div class="num" data-count="38" data-suffix="%">0</div>
+                    <div class="lbl">Avg risk reduction</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI SCORE WIDGET -->
+        <section id="insights" class="reveal">
+            <span class="eyebrow"><span class="dot"
+                    style="background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2);"></span> AI repo
+                score</span>
+            <h2 style="margin-top: 14px;">Health, risk &amp; tech debt — <span class="gradient-text">scored
+                    instantly.</span></h2>
+            <p class="lead">Every repo gets an objective health score, a risk grade, and AI-written summaries you can
+                ship to your standup.</p>
+
+            <div class="score-grid">
+                <div class="score-card">
+                    <div class="score-row">
+                        <div class="score-ring">
+                            <svg viewBox="0 0 120 120" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="#7c5cff" />
+                                        <stop offset="60%" stop-color="#22d3ee" />
+                                        <stop offset="100%" stop-color="#34d399" />
+                                    </linearGradient>
+                                </defs>
+                                <circle class="track" cx="60" cy="60" r="50" fill="none" stroke-width="10" />
+                                <circle class="bar" id="scoreBar" cx="60" cy="60" r="50" fill="none" stroke-width="10"
+                                    stroke-linecap="round" stroke-dasharray="314.159" stroke-dashoffset="314.159" />
+                            </svg>
+                            <div class="center">
+                                <div class="num" id="scoreNum">82</div>
+                                <div class="lbl">Health</div>
+                            </div>
+                        </div>
+                        <div class="score-meta">
+                            <div class="item">
+                                <div class="k">Risk level</div>
+                                <div class="v risk-low" id="scoreRisk">Low</div>
+                            </div>
+                            <div class="item">
+                                <div class="k">Complexity</div>
+                                <div class="v" id="scoreCx">B+</div>
+                            </div>
+                            <div class="item">
+                                <div class="k">Tech debt</div>
+                                <div class="v" id="scoreDebt">Moderate</div>
+                            </div>
+                            <div class="item">
+                                <div class="k">Files scanned</div>
+                                <div class="v" id="scoreFiles">412</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-dim); font-size: 13px; line-height: 1.55; margin: 18px 0 0;"
+                        id="scoreSummary">
+                        This repo follows a clean modular structure. Two hot files in <code
+                            class="mono">src/core/</code> account for ~38% of the risk — see suggestions on the right.
+                    </p>
+                </div>
+
+                <!-- HEATMAP -->
+                <div class="heatmap-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>Risk heatmap</h3>
+                        <span style="font-size: 12px; color: var(--text-faint);">Hover a tile</span>
+                    </div>
+                    <div class="heatmap-grid" id="heatmapGrid"></div>
+                    <div class="heatmap-legend">
+                        <span><span class="swatch" style="background: #34d399;"></span>Healthy</span>
+                        <span><span class="swatch" style="background: #f59e0b;"></span>Watch</span>
+                        <span><span class="swatch" style="background: #ef4444;"></span>Risky</span>
+                        <span style="margin-left: auto;" id="heatHover">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI INSIGHT PREVIEW -->
+            <div class="ai-panel reveal" style="margin-top: 22px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h3 style="display:inline-flex; align-items:center; gap:8px;">
+                        <span
+                            style="width:8px; height:8px; border-radius:50%; background: var(--accent); box-shadow:0 0 10px var(--accent);"></span>
+                        AI insight preview
+                    </h3>
+                    <span style="font-size:11px; color: var(--text-faint); margin-left:auto;">Sample output</span>
+                </div>
+                <div class="ai-row">
+                    <span class="badge high">HIGH</span>
+                    <div class="body">
+                        <div class="file">src/core/scheduler.ts</div>
+                        <div class="reason">Cyclomatic complexity 47 with 12 callers. Split scheduling logic into a
+                            state machine and extract retry policy.</div>
+                    </div>
+                </div>
+                <div class="ai-row">
+                    <span class="badge high">HIGH</span>
+                    <div class="body">
+                        <div class="file">packages/legacy/auth.js</div>
+                        <div class="reason">Last meaningful change 14 months ago, no tests, used by 6 entry points. Wrap
+                            in adapter and migrate consumers.</div>
+                    </div>
+                </div>
+                <div class="ai-row">
+                    <span class="badge med">MED</span>
+                    <div class="body">
+                        <div class="file">app/api/billing/route.ts</div>
+                        <div class="reason">Mixes input validation, persistence, and webhook dispatch. Extract domain
+                            layer to clarify failure modes.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section id="how" class="reveal">
+            <div class="center">
+                <span class="eyebrow"><span class="dot"></span> How it works</span>
+                <h2 style="margin-top: 14px;">From repo to <span class="gradient-text">city</span> in seconds.</h2>
+                <p class="lead">A purpose-built pipeline that scans your tree, scores each file, and renders a navigable
+                    3D model of your codebase.</p>
+            </div>
+            <div class="pipeline" id="pipeline">
+                <div class="pipe-step active">
+                    <div class="icon">🐙</div>
+                    <h4>GitHub Repo</h4>
+                    <p>Paste a URL. Public repos work instantly.</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="icon">🔍</div>
+                    <h4>AI Scanner</h4>
+                    <p>Walks the tree, parses files, scores risk.</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="icon">🏙️</div>
+                    <h4>City Generator</h4>
+                    <p>Maps folders to districts, files to buildings.</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="icon">🔥</div>
+                    <h4>Risk Map</h4>
+                    <p>Color, height &amp; glow visualize hotspots.</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="icon">🧠</div>
+                    <h4>Insights</h4>
+                    <p>AI explains what to refactor first.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- COMPARE -->
+        <section id="compare" class="reveal">
+            <div class="center">
+                <span class="eyebrow"><span class="dot"></span> Why DevCity AI</span>
+                <h2 style="margin-top: 14px;">The only tool that <span class="gradient-text">shows you the shape</span>
+                    of your codebase.</h2>
+            </div>
+            <div class="compare-grid">
+                <div class="compare-card">
+                    <h4>GitHub</h4>
+                    <div class="feat yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 12l5 5L20 7" />
+                        </svg> Source hosting</div>
+                    <div class="feat no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M6 6l12 12M18 6L6 18" />
+                        </svg> No 3D visualization</div>
+                    <div class="feat no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M6 6l12 12M18 6L6 18" />
+                        </svg> No risk explanations</div>
+                    <div class="feat no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M6 6l12 12M18 6L6 18" />
+                        </svg> No snapshot timeline</div>
+                </div>
+                <div class="compare-card">
+                    <h4>SonarQube</h4>
+                    <div class="feat yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 12l5 5L20 7" />
+                        </svg> Static analysis</div>
+                    <div class="feat no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M6 6l12 12M18 6L6 18" />
+                        </svg> Tables &amp; charts only</div>
+                    <div class="feat no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M6 6l12 12M18 6L6 18" />
+                        </svg> Heavy onboarding</div>
+                    <div class="feat no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M6 6l12 12M18 6L6 18" />
+                        </svg> No AI summaries</div>
+                </div>
+                <div class="compare-card ours">
+                    <h4>DevCity AI</h4>
+                    <div class="feat yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 12l5 5L20 7" />
+                        </svg> Interactive 3D city</div>
+                    <div class="feat yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 12l5 5L20 7" />
+                        </svg> AI risk &amp; refactor insights</div>
+                    <div class="feat yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 12l5 5L20 7" />
+                        </svg> Snapshot timeline &amp; diffs</div>
+                    <div class="feat yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M5 12l5 5L20 7" />
+                        </svg> Zero-config — paste &amp; go</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GITHUB PREVIEW -->
+        <section class="reveal">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;"
+                class="gh-section-grid">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span> GitHub access (preview)</span>
+                    <h2 style="margin-top: 14px;">Connect your repos, <span class="gradient-text">when you're
+                            ready.</span></h2>
+                    <p class="lead">DevCity AI works on public repos out of the box. To analyze private repos, sign in
+                        with GitHub. We request <strong>read-only</strong> access to repository contents — never write.
+                    </p>
+                    <ul style="color: var(--text-dim); font-size: 14px; line-height: 1.8; padding-left: 20px;">
+                        <li>✅ Read repository contents (files &amp; metadata)</li>
+                        <li>✅ List repositories you select</li>
+                        <li>🔒 No write access, no commits, no PRs</li>
+                        <li>🗑 Revoke any time from your GitHub settings</li>
+                    </ul>
+                </div>
+                <div class="gh-preview" style="position: relative;">
+                    <div class="gh-row"><span class="repo-name">your-org/payments-api</span><span class="meta"><span>★
+                                1.2k</span><span>TypeScript</span></span></div>
+                    <div class="gh-row"><span class="repo-name">your-org/web-app</span><span class="meta"><span>★
+                                842</span><span>React</span></span></div>
+                    <div class="gh-row"><span class="repo-name">your-org/data-pipelines</span><span class="meta"><span>★
+                                318</span><span>Python</span></span></div>
+                    <div class="gh-row"><span class="repo-name">your-org/infra</span><span class="meta"><span>★
+                                98</span><span>Terraform</span></span></div>
+                    <div class="gh-overlay">
+                        <div>
+                            <div style="font-size: 32px; margin-bottom: 8px;">🔒</div>
+                            <div style="font-weight: 700; margin-bottom: 6px;">Sign in to view your repos</div>
+                            <div style="color: var(--text-dim); font-size: 13px; margin-bottom: 14px;">Read-only ·
+                                Revocable · Open source.</div>
+                            <button class="btn btn-primary btn-sm"
+                                onclick="document.getElementById('repoInput').focus()">Try a public repo first</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ONBOARDING -->
+        <section id="start" class="reveal">
+            <div class="center">
+                <span class="eyebrow"><span class="dot"></span> Get started</span>
+                <h2 style="margin-top: 14px;">Four steps to your <span class="gradient-text">code city.</span></h2>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="n">STEP 01</div>
+                    <h4>Paste a repo</h4>
+                    <p>Drop a GitHub URL or pick a sample.</p>
+                </div>
+                <div class="step">
+                    <div class="n">STEP 02</div>
+                    <h4>Choose a mode</h4>
+                    <p>Risk, complexity, or anomaly view.</p>
+                </div>
+                <div class="step">
+                    <div class="n">STEP 03</div>
+                    <h4>Generate the city</h4>
+                    <p>We build a 3D model in seconds.</p>
+                </div>
+                <div class="step">
+                    <div class="n">STEP 04</div>
+                    <h4>Explore &amp; refactor</h4>
+                    <p>Use AI insights to ship cleaner code.</p>
+                </div>
+            </div>
+
+            <div class="final-cta">
+                <span class="eyebrow"><span class="dot"></span> Ready when you are</span>
+                <h2 style="margin: 14px 0 10px;">Turn your repo into a <span class="gradient-text">3D city</span> right
+                    now.</h2>
+                <p class="lead" style="margin: 0 auto;">Free demo on any public GitHub repository. No signup, no credit
+                    card.</p>
+                <div class="actions">
+                    <a href="#analyze" class="btn btn-primary"
+                        onclick="document.getElementById('repoInput').focus(); return false;">Analyze a repo →</a>
+                    <a href="city.html" class="btn">Open last analysis</a>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div>DevCity AI<a href="https://github.com" style="color: var(--text-dim);">github</a></div>
+        </footer>
+    </main>
+
+    <!-- FAB chat -->
+    <button class="chat-fab" id="chatFab" aria-label="Ask DevCity AI">💬</button>
+    <div class="chat-panel" id="chatPanel" role="dialog" aria-label="DevCity AI chat">
+        <div class="chat-head"><span class="dot"></span>
+            <h4>Ask DevCity AI</h4><span style="font-size:11px; color: var(--text-faint); margin-left:auto;">Demo</span>
+        </div>
+        <div class="chat-msgs" id="chatMsgs">
+            <div class="chat-msg bot">Hi! Ask me anything about a repository's risk or what to refactor first.</div>
+        </div>
+        <form class="chat-form" id="chatForm">
+            <input id="chatInput" placeholder="e.g. Which file is risky?" />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <!-- Command bar -->
+    <div class="cmd-overlay" id="cmdOverlay" role="dialog" aria-label="Command bar">
+        <div class="cmd-box">
+            <input class="cmd-input" id="cmdInput" placeholder="Search features, jump sections, run demo…" />
+            <div class="cmd-list" id="cmdList"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/three@0.136.0/build/three.min.js"></script>
+    <script>
+        /* =====================  HERO 3D SCENE  ===================== */
+        (function initHero() {
+            const canvas = document.getElementById('heroCanvas');
+            const stage = document.getElementById('heroStage');
+            const tooltip = document.getElementById('stageTooltip');
+            const info = document.getElementById('stageInfo');
+            if (!canvas || !window.THREE) return;
+
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.setClearColor(0x000000, 0);
+
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x05060a, 80, 220);
+
+            const camera = new THREE.PerspectiveCamera(45, 1, 1, 600);
+            const baseCamPos = new THREE.Vector3(80, 70, 80);
+            camera.position.copy(baseCamPos);
+            camera.lookAt(0, 0, 0);
+
+            // Lights
+            scene.add(new THREE.AmbientLight(0x6677aa, 0.55));
+            const key = new THREE.DirectionalLight(0xa78bfa, 0.9);
+            key.position.set(40, 80, 30);
+            scene.add(key);
+            const rim = new THREE.DirectionalLight(0x22d3ee, 0.5);
+            rim.position.set(-40, 50, -40);
+            scene.add(rim);
+
+            // Ground
+            const ground = new THREE.Mesh(
+                new THREE.CircleGeometry(110, 48),
+                new THREE.MeshBasicMaterial({ color: 0x0a0d18, transparent: true, opacity: 0.85 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.1;
+            scene.add(ground);
+
+            // Grid
+            const grid = new THREE.GridHelper(160, 32, 0x1a2440, 0x0f1424);
+            grid.position.y = 0;
+            scene.add(grid);
+
+            // Buildings - sample repo
+            const sample = [
+                { name: 'app/page.tsx', loc: 320, risk: 0.18 },
+                { name: 'app/layout.tsx', loc: 180, risk: 0.10 },
+                { name: 'components/Header.tsx', loc: 220, risk: 0.22 },
+                { name: 'components/Footer.tsx', loc: 90, risk: 0.08 },
+                { name: 'lib/api.ts', loc: 410, risk: 0.55 },
+                { name: 'lib/auth.ts', loc: 280, risk: 0.74 },
+                { name: 'lib/db.ts', loc: 360, risk: 0.62 },
+                { name: 'lib/utils.ts', loc: 140, risk: 0.12 },
+                { name: 'core/scheduler.ts', loc: 540, risk: 0.92 },
+                { name: 'core/queue.ts', loc: 320, risk: 0.68 },
+                { name: 'core/worker.ts', loc: 270, risk: 0.45 },
+                { name: 'core/cache.ts', loc: 200, risk: 0.30 },
+                { name: 'pages/index.tsx', loc: 240, risk: 0.20 },
+                { name: 'pages/dashboard.tsx', loc: 380, risk: 0.40 },
+                { name: 'styles/global.css', loc: 110, risk: 0.05 },
+                { name: 'tests/api.test.ts', loc: 160, risk: 0.10 },
+                { name: 'tests/auth.test.ts', loc: 130, risk: 0.08 },
+                { name: 'utils/date.ts', loc: 70, risk: 0.05 },
+                { name: 'utils/string.ts', loc: 60, risk: 0.05 },
+                { name: 'hooks/useAuth.ts', loc: 150, risk: 0.25 },
+                { name: 'hooks/useApi.ts', loc: 180, risk: 0.30 },
+                { name: 'config/env.ts', loc: 60, risk: 0.10 },
+                { name: 'types/index.ts', loc: 90, risk: 0.05 },
+                { name: 'middleware.ts', loc: 130, risk: 0.35 },
+                { name: 'public/sw.js', loc: 220, risk: 0.50 },
+            ];
+
+            function lerp(a, b, t) { return a + (b - a) * t; }
+            function riskColor(r) {
+                // green -> yellow -> red
+                if (r < 0.5) {
+                    const t = r / 0.5;
+                    return new THREE.Color(lerp(0.20, 0.96, t), lerp(0.83, 0.62, t), lerp(0.46, 0.04, t));
                 }
-                repos = await res.json();
-            } catch (e) {
-                progressEl.innerHTML = `<div style="color:#ff6666">Error listing repos: ${escapeHtml(e.message || String(e))}</div>`;
-                _analyzeAllRunning = false;
-                return;
+                const t = (r - 0.5) / 0.5;
+                return new THREE.Color(lerp(0.96, 0.94, t), lerp(0.62, 0.27, t), lerp(0.04, 0.27, t));
             }
 
-            if (!Array.isArray(repos) || repos.length === 0) {
-                progressEl.innerHTML = '<div style="color:#999">No repositories to analyze.</div>';
-                _analyzeAllRunning = false;
-                return;
-            }
+            const buildings = [];
+            const cols = 5;
+            const spacing = 11;
+            sample.forEach((f, i) => {
+                const x = (i % cols - (cols - 1) / 2) * spacing;
+                const z = (Math.floor(i / cols) - 2) * spacing;
+                const w = 5 + Math.sqrt(f.loc) * 0.18;
+                const h = 4 + f.loc * 0.04 + f.risk * 18;
+                const d = w;
+                const color = riskColor(f.risk);
+                const geom = new THREE.BoxGeometry(w, h, d);
+                const mat = new THREE.MeshPhongMaterial({
+                    color, shininess: 30, specular: 0x222244, transparent: true, opacity: 0.95
+                });
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.position.set(x, h / 2, z);
+                mesh.userData = { ...f, baseY: h / 2, baseColor: color.clone() };
+                scene.add(mesh);
+                buildings.push(mesh);
 
-            // Batch analyze sequentially (keeps server/GitHub friendly). Show progress and errors.
-            const total = repos.length;
-            let done = 0;
-            let success = 0;
-            let failed = 0;
-            progressEl.innerHTML = `Starting analysis for ${total} repositories...`;
-
-            for (const r of repos) {
-                const label = r.full_name || r.name || r.html_url;
-                progressEl.innerHTML = `Analyzing (${done}/${total}) — ${escapeHtml(label)}...`;
-                try {
-                    const resp = await fetch('/api/analyze', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ repo_url: r.html_url, label })
-                    });
-                    if (!resp.ok) {
-                        const text = await resp.text();
-                        console.warn('Analyze failed for', r.full_name, resp.status, text);
-                        failed += 1;
-                    } else {
-                        success += 1;
-                    }
-                } catch (e) {
-                    console.error('Analyze error', e);
-                    failed += 1;
-                }
-                done += 1;
-                // small delay to avoid spikes
-                await new Promise(resolve => setTimeout(resolve, 700));
-            }
-
-            progressEl.innerHTML = `<div>Completed: ${done}/${total} — Success: ${success} • Failed: ${failed}</div>`;
-            // Refresh snapshots if authenticated so new buildings appear
-            try { await loadSnapshots(); } catch (e) { /* ignore */ }
-            _analyzeAllRunning = false;
-        }
-
-        function escapeHtml(s) {
-            if (!s) return '';
-            return String(s).replace(/[&<>"']/g, function (c) {
-                return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+                // glowing top edge
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(geom),
+                    new THREE.LineBasicMaterial({ color: 0x7c5cff, transparent: true, opacity: 0.18 })
+                );
+                edges.position.copy(mesh.position);
+                scene.add(edges);
             });
-        }
 
-        if (analyzeBtn && repoInput && statusMsg) {
-            analyzeBtn.addEventListener('click', async () => {
-                const repoUrl = repoInput.value.trim();
-                const label = labelInput.value.trim();
-                if (!repoUrl) {
-                    statusMsg.textContent = '⚠️ Please enter a repository URL';
-                    statusMsg.style.color = '#ffff00';
-                    return;
-                }
+            // Sizing
+            function resize() {
+                const r = stage.getBoundingClientRect();
+                renderer.setSize(r.width, r.height, false);
+                camera.aspect = r.width / r.height;
+                camera.updateProjectionMatrix();
+            }
+            resize();
+            new ResizeObserver(resize).observe(stage);
 
-                statusMsg.textContent = '⏳ Analyzing repository...';
-                statusMsg.style.color = '#00ffcc';
-                analyzeBtn.disabled = true;
+            // Mouse / drag
+            let dragging = false, lastX = 0, lastY = 0, theta = Math.PI / 4, phi = Math.PI / 4, radius = baseCamPos.length();
+            let target = new THREE.Vector3(0, 0, 0);
+            function applyCam() {
+                camera.position.x = target.x + radius * Math.sin(phi) * Math.cos(theta);
+                camera.position.z = target.z + radius * Math.sin(phi) * Math.sin(theta);
+                camera.position.y = target.y + radius * Math.cos(phi);
+                camera.lookAt(target);
+            }
+            applyCam();
 
-                try {
-                    const response = await fetch('/api/analyze', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ repo_url: repoUrl, label })
-                    });
-
-                    if (response.ok) {
-                        const result = await response.json();
-                        statusMsg.textContent = '✅ Analysis complete. Opening city view...';
-                        statusMsg.style.color = '#00ff88';
-                        await refreshModelStatus();
-
-                        let cityDataStored = false;
-                        try {
-                            localStorage.setItem('cityData', JSON.stringify(result));
-                            cityDataStored = true;
-                            if (result.snapshot && result.snapshot.id) {
-                                localStorage.setItem('codecity_last_snapshot_id', result.snapshot.id);
-                            }
-                            if (result.snapshot && result.snapshot.repo_url) {
-                                localStorage.setItem('codecity_last_repo_url', result.snapshot.repo_url);
-                            }
-                        } catch (e) {
-                            console.warn('Could not persist city data', e);
-                        }
-
-                        if (!cityDataStored) {
-                            statusMsg.textContent = '⚠️ Analysis complete, but the city view data could not be stored locally.';
-                            statusMsg.style.color = '#ffcc66';
-                            return;
-                        }
-
-                        window.location.href = '/city';
-                        return;
-                    } else {
-                        let errorMsg = `${response.status}: ${response.statusText}`; // Default error
-                        try {
-                            // Try to get a more specific error from the JSON body
-                            const errorResult = await response.json();
-                            errorMsg = errorResult.error || JSON.stringify(errorResult);
-                        } catch (e) {
-                            // The error response wasn't JSON, stick with the default
-                            console.error("Could not parse error response as JSON", e);
-                        }
-                        statusMsg.textContent = `❌ Error: ${errorMsg}`;
-                        statusMsg.style.color = '#ff4444';
-                    }
-                } catch (error) {
-                    statusMsg.textContent = `❌ Error: ${error.message}`;
-                    statusMsg.style.color = '#ff4444';
-                } finally {
-                    analyzeBtn.disabled = false;
-                }
+            function ptr(e) { const t = e.touches ? e.touches[0] : e; return { x: t.clientX, y: t.clientY }; }
+            canvas.addEventListener('mousedown', (e) => { dragging = true; const p = ptr(e); lastX = p.x; lastY = p.y; });
+            window.addEventListener('mouseup', () => dragging = false);
+            window.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                const p = ptr(e);
+                theta -= (p.x - lastX) * 0.005;
+                phi = Math.max(0.2, Math.min(Math.PI / 2 - 0.05, phi - (p.y - lastY) * 0.005));
+                lastX = p.x; lastY = p.y;
+                applyCam();
             });
-        }
+            canvas.addEventListener('touchstart', (e) => { dragging = true; const p = ptr(e); lastX = p.x; lastY = p.y; }, { passive: true });
+            canvas.addEventListener('touchmove', (e) => {
+                if (!dragging) return;
+                const p = ptr(e);
+                theta -= (p.x - lastX) * 0.005;
+                phi = Math.max(0.2, Math.min(Math.PI / 2 - 0.05, phi - (p.y - lastY) * 0.005));
+                lastX = p.x; lastY = p.y;
+                applyCam();
+            }, { passive: true });
+            canvas.addEventListener('touchend', () => dragging = false);
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                radius = Math.max(50, Math.min(180, radius + e.deltaY * 0.06));
+                applyCam();
+            }, { passive: false });
 
-        document.querySelectorAll('.collapsible-panel h3').forEach(header => {
-            header.addEventListener('click', () => {
-                const content = header.nextElementSibling;
-                content.classList.toggle('collapsed');
-                const button = header.querySelector('.collapse-btn');
-                if (content.classList.contains('collapsed')) {
-                    button.textContent = '+';
+            // Hover & click
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            let hovered = null;
+            let lastRay = 0;
+
+            function setInfo(b) {
+                if (!b) return;
+                const f = b.userData;
+                const r = f.risk;
+                const cls = r > 0.66 ? 'risk-high' : r > 0.33 ? 'risk-med' : 'risk-low';
+                const label = r > 0.66 ? 'High Risk' : r > 0.33 ? 'Needs Refactor' : 'Healthy';
+                info.innerHTML = `<span class="name">${f.name}</span>
+      <span class="pill">${f.loc} LOC</span>
+      <span class="pill ${cls}">${label}</span>`;
+            }
+
+            canvas.addEventListener('mousemove', (e) => {
+                const now = performance.now();
+                if (now - lastRay < 50) return; // throttle
+                lastRay = now;
+                const r = canvas.getBoundingClientRect();
+                mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+                mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(buildings);
+                if (hits.length) {
+                    const m = hits[0].object;
+                    if (hovered !== m) {
+                        if (hovered) hovered.material.color.copy(hovered.userData.baseColor);
+                        hovered = m;
+                        m.material.color.copy(m.userData.baseColor).multiplyScalar(1.4);
+                    }
+                    tooltip.style.opacity = 1;
+                    tooltip.style.left = (e.clientX - r.left) + 'px';
+                    tooltip.style.top = (e.clientY - r.top) + 'px';
+                    tooltip.innerHTML = `<b>${m.userData.name}</b><br>${m.userData.loc} LOC · risk ${(m.userData.risk * 100) | 0}%`;
                 } else {
-                    button.textContent = '-';
+                    if (hovered) hovered.material.color.copy(hovered.userData.baseColor);
+                    hovered = null;
+                    tooltip.style.opacity = 0;
                 }
             });
-        });
+            canvas.addEventListener('click', () => { if (hovered) setInfo(hovered); });
+            canvas.addEventListener('mouseleave', () => {
+                if (hovered) hovered.material.color.copy(hovered.userData.baseColor);
+                hovered = null;
+                tooltip.style.opacity = 0;
+            });
 
-        // Initial auth + snapshot bootstrapping.
-        (async () => {
-            await refreshModelStatus();
-            await refreshAuth();
-            if (isAuthenticated) {
-                // Enable snapshot comparison controls
-                if (compareBtn) compareBtn.disabled = false;
-                if (cancelCompareBtn) cancelCompareBtn.disabled = false;
-                await loadSnapshots();
+            // Auto rotate when idle
+            let lastInteract = performance.now();
+            ['mousemove', 'mousedown', 'wheel', 'touchstart'].forEach((ev) => {
+                canvas.addEventListener(ev, () => lastInteract = performance.now(), { passive: true });
+            });
+
+            // Reset & flythrough
+            document.getElementById('stageReset').onclick = () => {
+                theta = Math.PI / 4; phi = Math.PI / 4; radius = baseCamPos.length();
+                target.set(0, 0, 0); applyCam();
+            };
+            let flying = false;
+            document.getElementById('stageFly').onclick = () => { flying = !flying; };
+
+            // Parallax with scroll
+            let parallax = 0;
+            window.addEventListener('scroll', () => {
+                parallax = Math.min(80, window.scrollY * 0.05);
+            }, { passive: true });
+
+            // Animate
+            let pulse = 0;
+            function animate() {
+                requestAnimationFrame(animate);
+                const idle = performance.now() - lastInteract > 2200;
+                if (idle && !dragging) theta += 0.0015;
+                if (flying) {
+                    theta += 0.004;
+                    phi = 0.55 + Math.sin(performance.now() * 0.0003) * 0.15;
+                    radius = 100 + Math.sin(performance.now() * 0.0005) * 25;
+                }
+                target.y = parallax * 0.04;
+                applyCam();
+
+                // pulse high risk
+                pulse += 0.04;
+                buildings.forEach((b) => {
+                    if (b.userData.risk > 0.66) {
+                        b.material.opacity = 0.85 + Math.sin(pulse + b.position.x) * 0.12;
+                    }
+                });
+                renderer.render(scene, camera);
+            }
+            animate();
+        })();
+
+        /* =====================  REVEAL  ===================== */
+        const io = new IntersectionObserver((es) => {
+            es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+        }, { threshold: 0.12 });
+        document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+        /* =====================  STATS COUNTER  ===================== */
+        const statsObs = new IntersectionObserver((es) => {
+            es.forEach(e => {
+                if (!e.isIntersecting) return;
+                const el = e.target;
+                const target = +el.dataset.count;
+                const suffix = el.dataset.suffix || '';
+                const dur = 1600;
+                const start = performance.now();
+                function tick(now) {
+                    const t = Math.min(1, (now - start) / dur);
+                    const eased = 1 - Math.pow(1 - t, 3);
+                    const v = Math.floor(target * eased);
+                    el.textContent = v.toLocaleString() + suffix;
+                    if (t < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+                statsObs.unobserve(el);
+            });
+        }, { threshold: 0.6 });
+        document.querySelectorAll('[data-count]').forEach(el => statsObs.observe(el));
+
+        /* =====================  SCORE RING  ===================== */
+        (function initScore() {
+            const bar = document.getElementById('scoreBar');
+            const num = document.getElementById('scoreNum');
+            const C = 2 * Math.PI * 50;
+            bar.style.strokeDasharray = C;
+            bar.style.strokeDashoffset = C;
+            const obs = new IntersectionObserver((es) => {
+                es.forEach(e => {
+                    if (!e.isIntersecting) return;
+                    const score = +num.textContent || 82;
+                    bar.style.strokeDashoffset = C * (1 - score / 100);
+                    obs.disconnect();
+                });
+            }, { threshold: 0.5 });
+            obs.observe(bar);
+        })();
+
+        /* =====================  HEATMAP  ===================== */
+        (function initHeatmap() {
+            const grid = document.getElementById('heatmapGrid');
+            const hover = document.getElementById('heatHover');
+            const cells = 16 * 8;
+            const dirs = ['app', 'lib', 'core', 'hooks', 'utils', 'tests', 'config', 'styles'];
+            const files = ['index', 'page', 'route', 'auth', 'db', 'cache', 'queue', 'scheduler', 'utils', 'header', 'footer', 'api', 'worker', 'env'];
+            for (let i = 0; i < cells; i++) {
+                const r = Math.pow(Math.random(), 1.6); // skew toward green
+                const c = document.createElement('div');
+                c.className = 'heat-cell';
+                c.style.background = (function () {
+                    if (r < 0.5) {
+                        const t = r / 0.5;
+                        const g = Math.round(0.83 * 255 + (0.62 - 0.83) * 255 * t);
+                        const rd = Math.round(0.20 * 255 + (0.96 - 0.20) * 255 * t);
+                        const b = Math.round(0.46 * 255 + (0.04 - 0.46) * 255 * t);
+                        return `rgb(${rd},${g},${b})`;
+                    }
+                    const t = (r - 0.5) / 0.5;
+                    const rd = Math.round(0.96 * 255 + (0.94 - 0.96) * 255 * t);
+                    const g = Math.round(0.62 * 255 + (0.27 - 0.62) * 255 * t);
+                    const b = Math.round(0.04 * 255 + (0.27 - 0.04) * 255 * t);
+                    return `rgb(${rd},${g},${b})`;
+                })();
+                c.style.opacity = 0.55 + r * 0.45;
+                const dir = dirs[i % dirs.length];
+                const f = files[(i * 7) % files.length];
+                c.dataset.label = `${dir}/${f}.ts · risk ${(r * 100) | 0}%`;
+                c.addEventListener('mouseenter', () => hover.textContent = c.dataset.label);
+                grid.appendChild(c);
             }
         })();
 
-        initDraggableWidgets();
-    });
+        /* =====================  PIPELINE STEP CYCLE  ===================== */
+        (function initPipeline() {
+            const steps = document.querySelectorAll('#pipeline .pipe-step');
+            let i = 0;
+            setInterval(() => {
+                steps.forEach(s => s.classList.remove('active'));
+                steps[i].classList.add('active');
+                i = (i + 1) % steps.length;
+            }, 1700);
+        })();
 
-    const DRAGGABLE_WIDGET_SELECTOR = '.snapshot-panel, .repo-panel, .legend, .diff-legend, .stats-panel, .search-panel, .sidebar, .risk-panel';
+        /* =====================  MODE TOGGLE  ===================== */
+        document.querySelectorAll('.mode-toggle button').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('.mode-toggle button').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                document.body.classList.toggle('product-mode', b.dataset.mode === 'product');
+            };
+        });
 
-    function initDraggableWidgets() {
-        const DRAG_THRESHOLD_PX = 5;
-        document.querySelectorAll(DRAGGABLE_WIDGET_SELECTOR).forEach((panel) => {
-            const header = panel.querySelector(':scope > h3');
-            if (!header) return;
+        /* =====================  ANALYZE FORM  ===================== */
+        (function initAnalyze() {
+            const form = document.getElementById('analyzeForm');
+            const input = document.getElementById('repoInput');
+            const btn = document.getElementById('analyzeBtn');
+            const status = document.getElementById('analyzeStatus');
+            const scoreNum = document.getElementById('scoreNum');
+            const scoreBar = document.getElementById('scoreBar');
+            const scoreRisk = document.getElementById('scoreRisk');
+            const scoreCx = document.getElementById('scoreCx');
+            const scoreDebt = document.getElementById('scoreDebt');
+            const scoreFiles = document.getElementById('scoreFiles');
+            const scoreSummary = document.getElementById('scoreSummary');
+            const C = 2 * Math.PI * 50;
 
-            header.addEventListener('mousedown', (down) => {
-                if (down.button !== 0) return;
-                if (down.target.closest('button')) return;
+            document.querySelectorAll('[data-sample]').forEach(b => {
+                b.onclick = () => { input.value = b.dataset.sample; input.focus(); };
+            });
 
-                let dragging = false;
-                const startX = down.clientX;
-                const startY = down.clientY;
+            function setStatus(text, kind) {
+                status.className = 'analyze-status' + (kind ? ' ' + kind : '');
+                status.innerHTML = (kind === 'loading' ? '<span class="spinner"></span>' : '') + text;
+            }
 
-                const rect = panel.getBoundingClientRect();
-                const offsetX = down.clientX - rect.left;
-                const offsetY = down.clientY - rect.top;
-
-                const bumpZIndex = () => {
-                    let maxZ = 100;
-                    document.querySelectorAll(DRAGGABLE_WIDGET_SELECTOR).forEach((el) => {
-                        const z = parseInt(getComputedStyle(el).zIndex, 10);
-                        if (!Number.isNaN(z)) maxZ = Math.max(maxZ, z);
+            function applyInsights(d) {
+                const ins = d.insights;
+                if (!ins) return;
+                const score = Math.max(0, Math.min(100, Math.round(ins.health_score)));
+                scoreNum.textContent = score;
+                scoreBar.style.strokeDashoffset = C * (1 - score / 100);
+                scoreRisk.textContent = ins.risk_level || '—';
+                scoreRisk.className = 'v ' + (ins.risk_level === 'High' ? 'risk-high' : ins.risk_level === 'Medium' ? 'risk-med' : 'risk-low');
+                scoreCx.textContent = ins.complexity_grade || '—';
+                scoreDebt.textContent = ins.tech_debt || '—';
+                scoreFiles.textContent = (d.files || []).length;
+                if (ins.summary) scoreSummary.textContent = ins.summary;
+                // top risks → ai panel
+                const panel = document.querySelector('.ai-panel');
+                if (panel && Array.isArray(ins.top_risks) && ins.top_risks.length) {
+                    panel.querySelectorAll('.ai-row').forEach(r => r.remove());
+                    ins.top_risks.slice(0, 4).forEach((r, i) => {
+                        const row = document.createElement('div');
+                        row.className = 'ai-row';
+                        row.innerHTML = `<span class="badge ${i < 2 ? 'high' : 'med'}">${i < 2 ? 'HIGH' : 'MED'}</span>
+          <div class="body"><div class="file">${r.path}</div><div class="reason">${r.reason} <em style="color: var(--accent-2)">→ ${r.suggestion}</em></div></div>`;
+                        panel.appendChild(row);
                     });
-                    panel.style.zIndex = String(maxZ + 1);
-                };
+                }
+            }
 
-                const onMove = (move) => {
-                    if (!dragging) {
-                        if (Math.abs(move.clientX - startX) < DRAG_THRESHOLD_PX &&
-                            Math.abs(move.clientY - startY) < DRAG_THRESHOLD_PX) {
-                            return;
-                        }
-                        dragging = true;
-                        // Lock the panel's size so it doesn't reflow/expand while dragging
-                        panel.style.width = `${rect.width}px`;
-                        panel.style.height = `${rect.height}px`;
-                        panel.style.boxSizing = 'border-box';
-                        panel.style.position = 'absolute';
-                        panel.style.left = `${rect.left}px`;
-                        panel.style.top = `${rect.top}px`;
-                        panel.style.right = 'auto';
-                        panel.style.bottom = 'auto';
-                        // Remove transform only after fixing width to avoid layout jumps
-                        panel.style.transform = 'none';
-                        bumpZIndex();
-                        header.style.cursor = 'grabbing';
-                    }
-                    move.preventDefault();
-                    let nx = move.clientX - offsetX;
-                    let ny = move.clientY - offsetY;
-                    const w = panel.offsetWidth;
-                    const h = panel.offsetHeight;
-                    nx = Math.max(0, Math.min(nx, window.innerWidth - w));
-                    ny = Math.max(0, Math.min(ny, window.innerHeight - h));
-                    panel.style.left = `${nx}px`;
-                    panel.style.top = `${ny}px`;
-                };
-
-                const onUp = () => {
-                    document.removeEventListener('mousemove', onMove);
-                    document.removeEventListener('mouseup', onUp);
-                    header.style.cursor = 'grab';
-                    if (dragging) {
-                        const swallowClick = (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        };
-                        header.addEventListener('click', swallowClick, { capture: true, once: true });
-                    }
-                };
-
-                document.addEventListener('mousemove', onMove);
-                document.addEventListener('mouseup', onUp);
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const repo = input.value.trim();
+                if (!repo) { setStatus('Paste a GitHub repo (e.g. vercel/next.js)', 'error'); return; }
+                btn.disabled = true;
+                setStatus('Fetching repo tree, scoring files, asking the AI…', 'loading');
+                try {
+                    const res = await fetch('/api/public/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ repo }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Analyze failed');
+                    // Persist for city.html
+                    try { localStorage.setItem('cityData', JSON.stringify(data)); } catch { }
+                    applyInsights(data);
+                    setStatus(`✓ Analyzed ${data.repo.full_name} · ${data.files.length} files. Opening city…`, 'success');
+                    setTimeout(() => { window.location.href = 'city.html'; }, 900);
+                } catch (err) {
+                    setStatus('✗ ' + (err.message || 'Could not analyze that repo'), 'error');
+                } finally {
+                    btn.disabled = false;
+                }
             });
-        });
-    }
-    </script>
+        })();
 
-    <!-- Main 3D city logic -->
-    <script>
-    let scene, camera, renderer, controls, allBuildings = [], allData = [];
-    let cityCenter = { x: 0, y: 0 };
-    let selectedBuilding = null;
-    let currentFilter = 'all';
-    let searchTerm = '';
-    let currentSnapshotId = null;
-    let cachedSnapshots = [];
-    let snapshotTimeline = []; // snapshots ordered oldest -> newest
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    function getRepoName(url) {
-        if (!url) return '';
-        const parts = url.split('/');
-        let repoName = parts.pop() || parts.pop(); // Handles optional trailing slash
-        if (repoName.endsWith('.git')) {
-            repoName = repoName.slice(0, -4);
-        }
-        return repoName;
-    }
-
-    async function loadSnapshots() {
-        try {
-            const listEl = document.getElementById('snapshot-list');
-            const emptyEl = document.getElementById('snapshot-list-empty');
-            const sliderContainer = document.getElementById('snapshot-timeline-container');
-            const slider = document.getElementById('snapshot-slider');
-            const sliderLabel = document.getElementById('snapshot-slider-label');
-
-            const res = await fetch('/api/snapshots');
-            if (!res.ok) {
-                if (res.status === 401) {
-                    listEl.innerHTML = '<div class="snapshot-meta" style="color: #ffff00;">Login with GitHub to access saved analyses.</div>';
-                    if (emptyEl) emptyEl.style.display = 'none';
-                    if (sliderContainer) sliderContainer.style.display = 'none';
-                    return;
-                }
-                console.error("Failed to load snapshots:", res.status, await res.text());
-                listEl.innerHTML = '<div class="snapshot-meta" style="color: #ff4444;">Error loading snapshots.</div>';
-                return;
+        /* =====================  COMMAND BAR  ===================== */
+        (function initCmd() {
+            const overlay = document.getElementById('cmdOverlay');
+            const input = document.getElementById('cmdInput');
+            const list = document.getElementById('cmdList');
+            const items = [
+                { label: 'Analyze a repo', kbd: '↵', do: () => { close(); document.getElementById('repoInput').focus(); } },
+                { label: 'Open dashboard (last analysis)', kbd: 'D', do: () => location.href = 'city.html' },
+                { label: 'Jump to: How it works', kbd: '1', do: () => { close(); document.getElementById('how').scrollIntoView({ behavior: 'smooth' }); } },
+                { label: 'Jump to: AI Insights', kbd: '2', do: () => { close(); document.getElementById('insights').scrollIntoView({ behavior: 'smooth' }); } },
+                { label: 'Jump to: Compare', kbd: '3', do: () => { close(); document.getElementById('compare').scrollIntoView({ behavior: 'smooth' }); } },
+                { label: 'Run demo: React repo', do: () => { close(); document.getElementById('repoInput').value = 'facebook/react'; document.getElementById('analyzeForm').requestSubmit(); } },
+                { label: 'Run demo: Express backend', do: () => { close(); document.getElementById('repoInput').value = 'expressjs/express'; document.getElementById('analyzeForm').requestSubmit(); } },
+                { label: 'Toggle Product / Developer mode', do: () => { close(); document.querySelector('.mode-toggle button:not(.active)').click(); } },
+            ];
+            let active = 0;
+            function render() {
+                const q = input.value.toLowerCase();
+                const matches = items.filter(it => it.label.toLowerCase().includes(q));
+                list.innerHTML = matches.map((it, i) => `<div class="cmd-item ${i === active ? 'active' : ''}" data-i="${items.indexOf(it)}">${it.label}${it.kbd ? `<span class="k">${it.kbd}</span>` : ''}</div>`).join('');
+                list.querySelectorAll('.cmd-item').forEach(el => el.onclick = () => items[+el.dataset.i].do());
             }
-            const snapshots = await res.json();
-            cachedSnapshots = snapshots;
-            snapshotTimeline = [...snapshots].slice().reverse(); // oldest -> newest
-            listEl.innerHTML = '';
-            if (!snapshots.length) {
-                emptyEl.style.display = 'block';
-                if (sliderContainer) sliderContainer.style.display = 'none';
-                return;
-            }
-            emptyEl.style.display = 'none';
-
-            snapshots.forEach(snap => {
-                const div = document.createElement('div');
-                div.className = 'snapshot-list-item';
-                div.dataset.id = snap.id;
-                const repoName = getRepoName(snap.repo_url);
-                div.innerHTML = `
-                    <span class="snapshot-label">${snap.label || repoName}</span>
-                    <div class="snapshot-meta">
-                        Repo: <strong>${repoName}</strong><br>
-                        Files: ${snap.file_count || 0} • Created: ${snap.created_at}
-                    </div>
-                `;
-                div.addEventListener('click', () => handleSnapshotClick(snap.id));
-                listEl.appendChild(div);
+            function open() { overlay.classList.add('open'); input.value = ''; active = 0; render(); setTimeout(() => input.focus(), 10); }
+            function close() { overlay.classList.remove('open'); }
+            document.getElementById('cmdBtn').onclick = open;
+            overlay.onclick = (e) => { if (e.target === overlay) close(); };
+            input.addEventListener('input', () => { active = 0; render(); });
+            input.addEventListener('keydown', (e) => {
+                const visible = list.querySelectorAll('.cmd-item');
+                if (e.key === 'ArrowDown') { active = Math.min(visible.length - 1, active + 1); render(); }
+                else if (e.key === 'ArrowUp') { active = Math.max(0, active - 1); render(); }
+                else if (e.key === 'Enter') { const el = visible[active]; if (el) items[+el.dataset.i].do(); }
+                else if (e.key === 'Escape') close();
             });
-
-            // Configure time slider if we have at least 2 snapshots
-            if (sliderContainer && slider && sliderLabel) {
-                if (snapshotTimeline.length > 1) {
-                    sliderContainer.style.display = 'block';
-                    slider.min = 0;
-                    slider.max = snapshotTimeline.length - 1;
-
-                    // Default to newest snapshot in timeline
-                    let currentIndex = snapshotTimeline.length - 1;
-                    if (currentSnapshotId) {
-                        const foundIndex = snapshotTimeline.findIndex(s => s.id === currentSnapshotId);
-                        if (foundIndex !== -1) {
-                            currentIndex = foundIndex;
-                        }
-                    }
-                    slider.value = currentIndex;
-
-                    const snap = snapshotTimeline[currentIndex];
-                    sliderLabel.textContent = `${snap.created_at} • ${snap.label || getRepoName(snap.repo_url)}`;
-
-                    slider.oninput = (e) => {
-                        const idx = parseInt(e.target.value, 10);
-                        const s = snapshotTimeline[idx];
-                        if (!s) return;
-                        sliderLabel.textContent = `${s.created_at} • ${s.label || getRepoName(s.repo_url)}`;
-                    };
-
-                    slider.onchange = async (e) => {
-                        const idx = parseInt(e.target.value, 10);
-                        const s = snapshotTimeline[idx];
-                        if (!s) return;
-                        await loadSnapshot(s.id);
-                    };
-                } else {
-                    sliderContainer.style.display = 'none';
+            window.addEventListener('keydown', (e) => {
+                if ((e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) && document.activeElement.tagName !== 'INPUT') {
+                    e.preventDefault(); open();
+                } else if (e.key === 'Escape' && overlay.classList.contains('open')) {
+                    close();
                 }
-            }
-
-            return snapshots;
-        } catch (e) {
-            console.warn('Failed to load snapshots', e);
-            return [];
-        }
-    }
-
-    async function loadSnapshot(id) {
-        try {
-            const res = await fetch(`/api/snapshots/${id}`);
-            if (!res.ok) {
-                console.error("Failed to load snapshot:", res.status, await res.text());
-                // Optionally update UI to show this error
-                return;
-            }
-            const payload = await res.json();
-            currentSnapshotId = id;
-            window.currentSnapshot = payload; // Store the whole snapshot object
-            allData = payload.data || [];
-            createOrUpdateCity();
-            highlightActiveSnapshot();
-        } catch (e) {
-            console.error('Error loading snapshot', e);
-        }
-    }
-
-    function highlightActiveSnapshot() {
-        const items = document.querySelectorAll('.snapshot-list-item');
-        items.forEach(item => {
-            if (item.dataset.id === currentSnapshotId) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-        });
-    }
-
-    async function createOrUpdateCity() {
-        if (!scene) {
-            await createCity();
-        } else {
-            createBuildings(window._loadedFont || null);
-            updateStatistics();
-        }
-    }
-
-    async function createCity() {
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a1a);
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        if (THREE.PCFSoftShadowMap !== undefined) {
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        }
-        document.body.insertBefore(renderer.domElement, document.body.firstChild);
-
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-        // Prefer loading the latest snapshot so we have snapshot metadata (repo_url)
-        let snapshots = [];
-        try {
-            snapshots = await loadSnapshots();
-        } catch (e) {
-            console.warn('Error loading snapshots at startup', e);
-        }
-
-        // Restore last selected snapshot if available, otherwise load newest
-        let desiredSnapshotId = null;
-        try {
-            desiredSnapshotId = localStorage.getItem('codecity_last_snapshot_id');
-        } catch (e) {
-            desiredSnapshotId = null;
-        }
-        if (!desiredSnapshotId && snapshots && snapshots.length) {
-            desiredSnapshotId = snapshots[0].id; // newest first from backend
-        }
-        if (desiredSnapshotId) {
-            await loadSnapshot(desiredSnapshotId);
-        } else {
-            // Fallback to current data endpoint (no snapshot meta)
-            try {
-                const response = await fetch('/api/data');
-                if (response.ok) {
-                    allData = await response.json();
-                }
-            } catch (e) {
-                console.warn('Error fetching initial data', e);
-            }
-        }
-
-        // Layout & grid
-        let maxX = 100, maxY = 100;
-        allData.forEach(b => {
-            maxX = Math.max(maxX, b.x + b.w);
-            maxY = Math.max(maxY, b.y + b.d);
-        });
-        cityCenter = { x: maxX / 2, y: maxY / 2 };
-        const gridSize = Math.max(maxX, maxY) * 2;
-        const gridDivisions = Math.ceil(gridSize / 10);
-        const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x444444, 0x222222);
-        scene.add(gridHelper);
-        gridHelper.position.y = -0.01;
-
-        // Lights
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        directionalLight.position.set(100, 150, 100);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048;
-        directionalLight.shadow.mapSize.height = 2048;
-        scene.add(directionalLight);
-
-        const ambientLight = new THREE.AmbientLight(0x808080, 0.8);
-        scene.add(ambientLight);
-
-        const pointLight = new THREE.PointLight(0xffffff, 0.5);
-        pointLight.position.set(-100, 100, 100);
-        scene.add(pointLight);
-
-        // Build city (without font first)
-        createBuildings(null);
-        updateStatistics();
-
-        // Camera
-        const citySize = Math.max(maxX, maxY);
-        const cameraDistance = citySize * 1.5;
-        camera.position.set(cameraDistance * 0.6, citySize * 0.9, cameraDistance * 0.9);
-        camera.lookAt(0, 0, 0);
-        controls.minDistance = citySize * 0.2;
-        controls.maxDistance = citySize * 4;
-        controls.update();
-
-        // Events
-        window.addEventListener('click', onBuildingClick, false);
-        window.addEventListener('mousemove', onMouseMove, false);
-        window.addEventListener('resize', onWindowResize, false);
-
-        document.getElementById('refresh-btn').addEventListener('click', refreshData);
-        document.getElementById('search-input').addEventListener('input', onSearch);
-        document.getElementById('filter-all').addEventListener('click', (e) => setFilter('all', e));
-        document.getElementById('filter-simple').addEventListener('click', (e) => setFilter('simple', e));
-        document.getElementById('filter-moderate').addEventListener('click', (e) => setFilter('moderate', e));
-        document.getElementById('filter-complex').addEventListener('click', (e) => setFilter('complex', e));
-        document.getElementById('filter-very-complex').addEventListener('click', (e) => setFilter('very-complex', e));
-        document.getElementById('filter-highly-complex').addEventListener('click', (e) => setFilter('highly-complex', e));
-
-        const viewDist = citySize * 1.5;
-        const viewHeight = citySize * 0.6;
-        document.getElementById('view-top').addEventListener('click', () => setView(0, viewDist, 0));
-        document.getElementById('view-front').addEventListener('click', () => setView(0, viewHeight, viewDist));
-        document.getElementById('view-side').addEventListener('click', () => setView(viewDist, viewHeight, 0));
-        document.getElementById('view-3d').addEventListener('click', () => setView(viewDist * 0.4, viewHeight, viewDist * 0.8));
-
-        // Load font for labels (optional)
-        const fontLoader = new THREE.FontLoader();
-        fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-            window._loadedFont = font;
-            createBuildings(font);
-            updateStatistics();
-        });
-
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            allBuildings.forEach(b => {
-                b.text.lookAt(camera.position);
             });
-            renderer.render(scene, camera);
-        }
-        animate();
+        })();
 
-        // Snapshots already loaded above (and on demand after new analyses)
-    }
-
-    function createBuildings(font) {
-        allBuildings.forEach(b => {
-            scene.remove(b.mesh);
-            scene.remove(b.edges);
-            if (b.text) scene.remove(b.text);
-        });
-        allBuildings = [];
-
-        if (!allData || !allData.length) return;
-
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        allData.forEach(file => {
-            minX = Math.min(minX, file.x);
-            maxX = Math.max(maxX, file.x + file.w);
-            minY = Math.min(minY, file.y);
-            maxY = Math.max(maxY, file.y + file.d);
-        });
-        cityCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
-
-        const maxChurn = allData.reduce((max, f) => Math.max(max, f.churn || 0), 0);
-
-        allData.forEach((file, index) => {
-            const shouldShow = passesFilter(file);
-            const spacing = 0.92;
-            const adjustedW = file.w * spacing;
-            const adjustedD = file.d * spacing;
-
-            const geometry = new THREE.BoxGeometry(adjustedW, file.h, adjustedD);
-            const material = new THREE.MeshPhongMaterial({
-                color: file.color,
-                shininess: 100,
-                specular: 0x444444,
-                emissive: file.color,
-                emissiveIntensity: 0.2
-            });
-            const building = new THREE.Mesh(geometry, material);
-            building.position.x = file.x + (file.w / 2) - cityCenter.x;
-            building.position.z = file.y + (file.d / 2) - cityCenter.y;
-            building.position.y = file.h / 2;
-            building.castShadow = true;
-            building.receiveShadow = true;
-            building.userData = { ...file, index };
-            building.visible = shouldShow;
-            scene.add(building);
-
-            const edgeGeometry = new THREE.EdgesGeometry(geometry);
-            // Edge color encodes git churn: more red = more frequently changed
-            let edgeColor = new THREE.Color(0x222222);
-            if (maxChurn > 0 && (file.churn || 0) > 0) {
-                const t = Math.min(1, (file.churn || 0) / maxChurn);
-                edgeColor = new THREE.Color(0x222222).lerp(new THREE.Color(0xff0000), t);
-            }
-            const edgeMaterial = new THREE.LineBasicMaterial({ color: edgeColor });
-            const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-            edges.position.copy(building.position);
-            edges.userData = { isEdge: true, parentIndex: index };
-            edges.visible = shouldShow;
-            scene.add(edges);
-
-            let textMesh = new THREE.Object3D();
-            if (font) {
-                const textGeometry = new THREE.TextGeometry(file.name, {
-                    font: font,
-                    size: 1.5,
-                    height: 0.1,
-                });
-                textGeometry.computeBoundingBox();
-                textGeometry.center();
-                const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                textMesh = new THREE.Mesh(textGeometry, textMaterial);
-            }
-            textMesh.position.x = building.position.x;
-            textMesh.position.z = building.position.z;
-            textMesh.position.y = building.position.y + (file.h / 2) + 4;
-            textMesh.userData = { isText: true, parentIndex: index };
-            textMesh.visible = shouldShow;
-            scene.add(textMesh);
-
-            allBuildings.push({ mesh: building, edges, text: textMesh, data: file });
-        });
-    }
-
-    function passesFilter(file) {
-        const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
-        if (!matchesSearch) return false;
-
-        const complexity = file.h / 2;
-        if (currentFilter === 'all') return true;
-        if (currentFilter === 'simple') return complexity >= 1 && complexity <= 5;
-        if (currentFilter === 'moderate') return complexity >= 6 && complexity <= 15;
-        if (currentFilter === 'complex') return complexity >= 16 && complexity <= 30;
-        if (currentFilter === 'very-complex') return complexity >= 31 && complexity <= 50;
-        if (currentFilter === 'highly-complex') return complexity >= 51;
-        return true;
-    }
-
-    function onBuildingClick(event) {
-        if (!renderer) return;
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObjects(scene.children);
-        for (let i = 0; i < intersects.length; i++) {
-            const obj = intersects[i].object;
-            if (obj.userData.isEdge || obj.userData.isText) continue;
-            if (obj.geometry && obj.geometry instanceof THREE.BoxGeometry) {
-                selectedBuilding = obj.userData;
-                showBuildingDetails(obj.userData);
-                highlightBuilding(obj.userData.index);
-                break;
-            }
-        }
-    }
-
-    function getHealthStatus(complexity) {
-        if (complexity <= 5) return 'Excellent (Low Maintenance)';
-        if (complexity <= 15) return 'Good (Standard Maintenance)';
-        if (complexity <= 30) return 'Warning (Review Recommended)';
-        if (complexity <= 50) return 'Vulnerable (High Technical Debt)';
-        return 'Critical (Immediate Refactoring Needed)';
-    }
-
-    function showBuildingDetails(data) {
-        const linesOfCode = data.size || 0;
-        const complexity = data.h / 2;
-        const healthStatus = getHealthStatus(complexity);
-        const riskScore = (data.risk_score || 0).toFixed(3);
-        const anomalyScore = (data.anomaly_score || 0).toFixed(3);
-        let githubButton = '';
-        
-        // Handle both snapshot structures (from analysis vs. from loading)
-        const snapshotInfo = window.currentSnapshot ? (window.currentSnapshot.meta || window.currentSnapshot) : null;
-        let repoUrl = snapshotInfo && snapshotInfo.repo_url ? snapshotInfo.repo_url : null;
-        if (!repoUrl) {
-            try {
-                repoUrl = localStorage.getItem('codecity_last_repo_url');
-            } catch (e) {
-                repoUrl = null;
-            }
-        }
-
-        if (repoUrl) {
-            const baseUrl = repoUrl.replace('.git', '');
-            const fileUrl = `${baseUrl}/blob/main/${data.path || data.name}`; // Assuming 'main' branch
-            githubButton = `<a href="${fileUrl}" target="_blank" class="github-button">View on GitHub</a>`;
-        }
-        const html = `
-            <div class="detail-card">
-                <div>
-                    <h4 class="detail-title" style="color: ${data.color}">${escapeHtml(data.name)}</h4>
-                    <div class="detail-path">${escapeHtml(data.path || data.name)}</div>
-                </div>
-                <div class="detail-metrics">
-                    <div class="detail-metric"><span>Complexity</span><strong>${complexity.toFixed(1)}</strong></div>
-                    <div class="detail-metric"><span>Lines of code</span><strong>${linesOfCode}</strong></div>
-                    <div class="detail-metric"><span>Width</span><strong>${data.w.toFixed(1)}m</strong></div>
-                    <div class="detail-metric"><span>Depth</span><strong>${data.d.toFixed(1)}m</strong></div>
-                    <div class="detail-metric"><span>Height</span><strong>${data.h.toFixed(1)}m</strong></div>
-                    <div class="detail-metric"><span>Churn</span><strong>${(data.churn || 0)}</strong></div>
-                    <div class="detail-metric"><span>Risk score</span><strong>${riskScore}</strong></div>
-                    <div class="detail-metric"><span>Anomaly score</span><strong>${anomalyScore}</strong></div>
-                </div>
-                <div class="detail-health">
-                    <span>Health status</span>
-                    <strong><span style="color: ${data.color}">●</span> ${escapeHtml(healthStatus)}</strong>
-                </div>
-                ${githubButton}
-            </div>
-        `;
-        document.getElementById('details-content').innerHTML = html;
-    }
-
-    function highlightBuilding(index) {
-        allBuildings.forEach((b, i) => {
-            b.mesh.material.emissiveIntensity = (i === index) ? 0.5 : 0.2;
-        });
-    }
-
-    function updateStatistics() {
-        const validData = allData.filter(d => passesFilter(d));
-        const totalFiles = validData.length;
-        let avgComplexity = 0;
-        let totalLines = 0;
-        let highComplexityCount = 0;
-        let avgRiskScore = 0;
-        let avgAnomalyScore = 0;
-
-        if (totalFiles > 0) {
-            avgComplexity = (validData.reduce((sum, f) => sum + f.h / 2, 0) / totalFiles).toFixed(1);
-            totalLines = validData.reduce((sum, f) => sum + (f.size || 0), 0);
-            highComplexityCount = validData.filter(f => f.h > 28).length;
-
-            const totalRisk = validData.reduce((sum, f) => sum + (f.risk_score || 0), 0);
-            const totalAnomaly = validData.reduce((sum, f) => sum + (f.anomaly_score || 0), 0);
-            avgRiskScore = (totalRisk / totalFiles).toFixed(3);
-            avgAnomalyScore = (totalAnomaly / totalFiles).toFixed(3);
-        }
-        document.getElementById('total-files').textContent = totalFiles;
-        document.getElementById('avg-complexity').textContent = avgComplexity;
-        document.getElementById('total-lines').textContent = totalLines;
-        document.getElementById('high-risk').textContent = highComplexityCount;
-        document.getElementById('avg-risk-score').textContent = avgRiskScore;
-        document.getElementById('avg-anomaly-score').textContent = avgAnomalyScore;
-
-        updateRiskTable(validData);
-    }
-
-    function updateRiskTable(files) {
-        const tbody = document.getElementById('risk-table-body');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-        if (!files.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="color:#777;">No data available.</td></tr>';
-            return;
-        }
-        const sorted = [...files].sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0)).slice(0, 10);
-        sorted.forEach((f, idx) => {
-            const risk = (f.risk_score || 0).toFixed(3);
-            const anomaly = (f.anomaly_score || 0).toFixed(3);
-            const complexity = (f.h / 2).toFixed(1);
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${idx + 1}</td>
-                <td title="${escapeHtml(f.path || f.name)}">${escapeHtml(f.name)}</td>
-                <td>${risk}</td>
-                <td>${anomaly}</td>
-                <td>${complexity}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function onMouseMove(event) {
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    }
-
-    function onWindowResize() {
-        if (!camera || !renderer) return;
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    function setFilter(filter, evt) {
-        currentFilter = filter;
-        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-        if (evt && evt.target) evt.target.classList.add('active');
-        allBuildings.forEach(b => {
-            const visible = passesFilter(b.data);
-            b.mesh.visible = visible;
-            b.edges.visible = visible;
-            b.text.visible = visible;
-        });
-        updateStatistics();
-    }
-
-    function onSearch(event) {
-        searchTerm = event.target.value;
-        allBuildings.forEach(b => {
-            const visible = passesFilter(b.data);
-            b.mesh.visible = visible;
-            b.edges.visible = visible;
-            b.text.visible = visible;
-        });
-        updateStatistics();
-    }
-
-    function setView(x, y, z) {
-        if (!camera || !controls) return;
-        camera.position.set(x, y, z);
-        controls.target.set(0, 0, 0);
-        controls.update();
-    }
-
-    async function refreshData() {
-        console.log('Refreshing current data...');
-        try {
-            const response = await fetch('/api/data?t=' + Date.now());
-            if (!response.ok) {
-                console.error("Failed to refresh data:", response.status, await response.text());
-                alert("Error: Could not refresh data.");
-                return;
-            }
-            allData = await response.json();
-            createBuildings(window._loadedFont || null);
-            updateStatistics();
-        } catch (e) {
-            console.error("Error during data refresh:", e);
-        }
-    }
-
-    // Bootstrapping
-    (async () => {
-        await createCity();
-    })().catch(e => console.error('Error initializing city', e));
-    </script>
-    <script>
-    let inComparisonMode = false;
-    let selectedSnapshots = [];
-
-    const compareBtn = document.getElementById('compare-btn');
-    const cancelCompareBtn = document.getElementById('cancel-compare-btn');
-    const diffLegend = document.querySelector('.diff-legend');
-
-    compareBtn.addEventListener('click', () => {
-        inComparisonMode = true;
-        selectedSnapshots = [];
-        compareBtn.style.display = 'none';
-        cancelCompareBtn.style.display = 'block';
-        document.querySelectorAll('.snapshot-list-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        alert('Select two snapshots to compare.');
-    });
-
-    cancelCompareBtn.addEventListener('click', () => {
-        inComparisonMode = false;
-        selectedSnapshots = [];
-        compareBtn.style.display = 'block';
-        cancelCompareBtn.style.display = 'none';
-        diffLegend.style.display = 'none';
-        loadSnapshot(currentSnapshotId); // Revert to the last selected snapshot
-    });
-
-    async function handleSnapshotClick(snapId) {
-        if (inComparisonMode) {
-            if (selectedSnapshots.includes(snapId)) {
-                selectedSnapshots = selectedSnapshots.filter(id => id !== snapId);
-                document.querySelector(`[data-id='${snapId}']`).classList.remove('active');
-            } else if (selectedSnapshots.length < 2) {
-                selectedSnapshots.push(snapId);
-                document.querySelector(`[data-id='${snapId}']`).classList.add('active');
-            }
-
-            if (selectedSnapshots.length === 2) {
-                const [snap1, snap2] = selectedSnapshots;
-                const response = await fetch(`/api/diff?snap1=${snap1}&snap2=${snap2}`);
-                if (!response.ok) {
-                    console.error("Failed to get diff:", response.status, await response.text());
-                    alert("Error: Could not compare snapshots.");
-                    // maybe reset the comparison UI
-                    cancelCompareBtn.click();
-                    return;
-                }
-                const diffData = await response.json();
-                visualizeDiff(diffData);
-                diffLegend.style.display = 'block';
-            }
-        } else {
-            loadSnapshot(snapId);
-        }
-    }
-
-    function visualizeDiff(diffData) {
-        allBuildings.forEach(b => {
-            scene.remove(b.mesh);
-            scene.remove(b.edges);
-            if (b.text) scene.remove(b.text);
-        });
-        allBuildings = [];
-
-        const allFiles = [
-            ...diffData.added.map(f => ({ ...f, status: 'added' })),
-            ...diffData.removed.map(f => ({ ...f, status: 'removed' })),
-            ...diffData.modified.map(m => ({ ...m.new_data, status: 'modified', complexity_change: m.complexity_change }))
-        ];
-
-        allData = allFiles;
-        createBuildings(window._loadedFont || null);
-
-        allBuildings.forEach(b => {
-            if (b.data.status === 'added') {
-                b.mesh.material.color.set(0xffff00); // Yellow
-                b.mesh.material.emissive.set(0xffff00);
-                b.mesh.material.emissiveIntensity = 0.4;
-            } else if (b.data.status === 'removed') {
-                b.mesh.material.color.set(0x808080); // Grey
-                b.mesh.material.emissive.set(0x808080);
-                b.mesh.material.emissiveIntensity = 0.2;
-            } else if (b.data.status === 'modified') {
-                if (b.data.complexity_change > 0) {
-                    b.mesh.material.color.set(0xff0000); // Red
-                    b.mesh.material.emissive.set(0xff0000);
-                    b.mesh.material.emissiveIntensity = 0.7; // Glow
-                } else {
-                    b.mesh.material.color.set(0x00ff00); // Green
-                    b.mesh.material.emissive.set(0x00ff00);
-                    b.mesh.material.emissiveIntensity = 0.7; // Glow
-                }
-            }
-        });
-    }
+        /* =====================  AI MINI CHAT (mock)  ===================== */
+        (function initChat() {
+            const fab = document.getElementById('chatFab');
+            const panel = document.getElementById('chatPanel');
+            const form = document.getElementById('chatForm');
+            const input = document.getElementById('chatInput');
+            const msgs = document.getElementById('chatMsgs');
+            fab.onclick = () => panel.classList.toggle('open');
+            const responses = {
+                risky: "Based on the demo repo, `core/scheduler.ts` and `lib/auth.ts` are highest risk — high complexity, many callers, and tests are sparse.",
+                refactor: "Start with `core/scheduler.ts`: extract a state machine and isolate the retry policy. Then wrap `lib/auth.ts` behind an adapter.",
+                architecture: "The codebase has clear app/lib/core layering. Watch for `lib/` modules importing from `core/` — that should be the other way around.",
+                default: "Try a real repo: paste a GitHub URL above and I'll analyze its risk hotspots in seconds.",
+            };
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                const v = input.value.trim();
+                if (!v) return;
+                const u = document.createElement('div'); u.className = 'chat-msg user'; u.textContent = v; msgs.appendChild(u);
+                input.value = '';
+                msgs.scrollTop = msgs.scrollHeight;
+                setTimeout(() => {
+                    const lower = v.toLowerCase();
+                    let r = responses.default;
+                    if (/risk|risky/.test(lower)) r = responses.risky;
+                    else if (/refactor|fix/.test(lower)) r = responses.refactor;
+                    else if (/architect|structure/.test(lower)) r = responses.architecture;
+                    const b = document.createElement('div'); b.className = 'chat-msg bot'; b.textContent = r; msgs.appendChild(b);
+                    msgs.scrollTop = msgs.scrollHeight;
+                }, 450);
+            };
+        })();
     </script>
 </body>
+
 </html>
