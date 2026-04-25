@@ -1345,6 +1345,145 @@
                 transition: none;
             }
         }
+
+        /* Auth Gate */
+        .hero-login-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 999px;
+            background: rgba(124, 92, 255, 0.15);
+            border: 1px solid rgba(124, 92, 255, 0.4);
+            box-shadow: 0 10px 30px -10px rgba(124, 92, 255, 0.4);
+            backdrop-filter: blur(14px);
+            transition: all 0.3s ease;
+            color: var(--text);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero-login-btn:hover {
+            box-shadow: 0 15px 40px -10px rgba(124, 92, 255, 0.6);
+            transform: translateY(-2px);
+            border-color: var(--accent);
+            background: rgba(124, 92, 255, 0.25);
+        }
+
+        .analyze-wrapper {
+            position: relative;
+            margin-top: 30px;
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .login-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            background: rgba(10, 13, 24, 0.65);
+            backdrop-filter: blur(6px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            border-radius: 18px;
+        }
+
+        .analyze-wrapper.locked .analyze-card {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .analyze-wrapper.locked .login-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Modals */
+        .auth-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .auth-modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .auth-modal-box {
+            background: var(--surface-2);
+            border: 1px solid var(--border-strong);
+            border-radius: 20px;
+            padding: 32px;
+            width: min(400px, 92vw);
+            text-align: center;
+            position: relative;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.8);
+        }
+
+        .auth-modal-overlay.open .auth-modal-box {
+            transform: scale(1);
+        }
+
+        .btn-close-modal {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-faint);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .btn-close-modal:hover {
+            color: var(--text);
+        }
+
+        @media (max-width: 768px) {
+            .login-overlay {
+                display: none !important;
+            }
+
+            .analyze-wrapper.locked::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: 10;
+                cursor: pointer;
+            }
+
+            .auth-modal-box {
+                position: absolute;
+                bottom: 0;
+                width: 100%;
+                max-width: 100%;
+                border-radius: 24px 24px 0 0;
+                padding-bottom: max(32px, env(safe-area-inset-bottom));
+                transform: translateY(100%);
+            }
+
+            .auth-modal-overlay.open .auth-modal-box {
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 
@@ -1387,30 +1526,71 @@
                     <p class="lead">DevCity AI turns any GitHub repository into an interactive city of buildings — each
                         file scaled by complexity, colored by risk, and explained by AI.</p>
 
-                    <form class="analyze-card" id="analyzeForm" autocomplete="off">
-                        <div class="analyze-row">
-                            <span class="gh-pre">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <!-- GITHUB LOGIN BUTTON (HERO) -->
+                    <div id="heroLoginArea" style="margin-top: 28px; display: none;">
+                        <button class="hero-login-btn github-login-btn">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.1.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.36-3.37-1.36-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84a9.4 9.4 0 0 1 2.5.34c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.26C22 6.58 17.52 2 12 2z">
+                                </path>
+                            </svg>
+                            Sign in with GitHub
+                        </button>
+                    </div>
+
+                    <!-- USER PROFILE / LOGGED IN STATE -->
+                    <div id="heroUserArea" style="margin-top: 28px; display: none; align-items: center; gap: 14px;">
+                        <img id="userAvatar" src="" alt="Avatar"
+                            style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border-strong); box-shadow: var(--shadow-glow);" />
+                        <div>
+                            <div id="userName" style="font-weight: 700; font-size: 16px; color: var(--text);"></div>
+                            <a href="/logout"
+                                style="font-size: 13px; color: var(--text-faint); text-decoration: underline;">Sign
+                                out</a>
+                        </div>
+                    </div>
+
+                    <div class="analyze-wrapper locked" id="analyzeWrapper">
+                        <form class="analyze-card" id="analyzeForm" autocomplete="off" style="margin-top: 0;">
+                            <div class="analyze-row">
+                                <span class="gh-pre">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                        <path
+                                            d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.1.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.36-3.37-1.36-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84a9.4 9.4 0 0 1 2.5.34c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.26C22 6.58 17.52 2 12 2z" />
+                                    </svg>
+                                    <span>github.com/</span>
+                                </span>
+                                <input class="analyze-input" id="repoInput" type="text" placeholder="vercel/next.js"
+                                    spellcheck="false" />
+                                <button class="btn btn-primary" id="analyzeBtn" type="submit">Analyze repo</button>
+                            </div>
+                            <div class="sample-row">
+                                <span style="font-size: 12px; color: var(--text-faint); padding: 6px 0;">Try:</span>
+                                <button class="chip" type="button" data-sample="facebook/react">⚛️ React</button>
+                                <button class="chip" type="button" data-sample="expressjs/express">🟢 Node
+                                    backend</button>
+                                <button class="chip" type="button" data-sample="huggingface/transformers">🤖 AI
+                                    project</button>
+                                <button class="chip" type="button" data-sample="tailwindlabs/tailwindcss">🎨
+                                    Tailwind</button>
+                            </div>
+                            <div class="analyze-status" id="analyzeStatus"></div>
+                        </form>
+
+                        <!-- DESKTOP OVERLAY -->
+                        <div id="analyzeOverlay" class="login-overlay">
+                            <p style="margin: 0 0 14px; font-weight: 600; font-size: 15px; color: var(--text);">Sign in
+                                with GitHub to analyze repositories and generate your AI Code City</p>
+                            <button class="btn btn-primary github-login-btn">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                                     <path
-                                        d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.1.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.36-3.37-1.36-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84a9.4 9.4 0 0 1 2.5.34c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.26C22 6.58 17.52 2 12 2z" />
+                                        d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.1.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.36-3.37-1.36-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84a9.4 9.4 0 0 1 2.5.34c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.26C22 6.58 17.52 2 12 2z">
+                                    </path>
                                 </svg>
-                                <span>github.com/</span>
-                            </span>
-                            <input class="analyze-input" id="repoInput" type="text" placeholder="vercel/next.js"
-                                spellcheck="false" />
-                            <button class="btn btn-primary" id="analyzeBtn" type="submit">Analyze repo</button>
+                                Continue with GitHub
+                            </button>
                         </div>
-                        <div class="sample-row">
-                            <span style="font-size: 12px; color: var(--text-faint); padding: 6px 0;">Try:</span>
-                            <button class="chip" type="button" data-sample="facebook/react">⚛️ React</button>
-                            <button class="chip" type="button" data-sample="expressjs/express">🟢 Node backend</button>
-                            <button class="chip" type="button" data-sample="huggingface/transformers">🤖 AI
-                                project</button>
-                            <button class="chip" type="button" data-sample="tailwindlabs/tailwindcss">🎨
-                                Tailwind</button>
-                        </div>
-                        <div class="analyze-status" id="analyzeStatus"></div>
-                    </form>
+                    </div> <!-- /analyze-wrapper -->
 
                     <div class="hero-trust">
                         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
@@ -1421,7 +1601,7 @@
                             </svg> Public repos out of the box</span>
                         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                                 <path d="M5 12l5 5L20 7" />
-                            </svg> AI insights powered by Lovable AI</span>
+                            </svg> AI insights</span>
                     </div>
                 </div>
 
@@ -1700,8 +1880,8 @@
                             <div style="font-weight: 700; margin-bottom: 6px;">Sign in to view your repos</div>
                             <div style="color: var(--text-dim); font-size: 13px; margin-bottom: 14px;">Read-only ·
                                 Revocable · Open source.</div>
-                            <button class="btn btn-primary btn-sm"
-                                onclick="document.getElementById('repoInput').focus()">Try a public repo first</button>
+                            <button class="btn btn-primary btn-sm github-login-btn" type="button">Connect GitHub
+                                Account</button>
                         </div>
                     </div>
                 </div>
@@ -1779,8 +1959,91 @@
         </div>
     </div>
 
+    <!-- Auth Modal -->
+    <div class="auth-modal-overlay" id="authModal">
+        <div class="auth-modal-box">
+            <button class="btn-close-modal" id="closeAuthModal" aria-label="Close modal">✕</button>
+            <div style="font-size: 32px; margin-bottom: 12px;">🔒</div>
+            <h3 style="margin-bottom: 8px;">Authentication Required</h3>
+            <p style="color: var(--text-dim); font-size: 14px; margin-bottom: 24px;">Please sign in with GitHub to
+                access repository analysis features.</p>
+            <button class="btn btn-primary github-login-btn" style="width: 100%; justify-content: center;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path
+                        d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.1.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.36-3.37-1.36-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84a9.4 9.4 0 0 1 2.5.34c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.26C22 6.58 17.52 2 12 2z">
+                    </path>
+                </svg>
+                Sign in with GitHub
+            </button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/three@0.136.0/build/three.min.js"></script>
     <script>
+        /* =====================  AUTH LOGIC  ===================== */
+        const authState = { isAuthenticated: false, user: null };
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/me');
+                if (res.ok) {
+                    const data = await res.json();
+                    authState.isAuthenticated = !!data.authenticated;
+                    authState.user = data.user || null;
+                } else {
+                    authState.isAuthenticated = false;
+                }
+            } catch (err) {
+                authState.isAuthenticated = false;
+            }
+            updateUIForAuth();
+        }
+
+        function updateUIForAuth() {
+            const loginArea = document.getElementById('heroLoginArea');
+            const userArea = document.getElementById('heroUserArea');
+            const wrapper = document.getElementById('analyzeWrapper');
+
+            if (authState.isAuthenticated) {
+                if (loginArea) loginArea.style.display = 'none';
+                if (userArea) userArea.style.display = 'flex';
+                if (wrapper) wrapper.classList.remove('locked');
+
+                if (authState.user) {
+                    const nameEl = document.getElementById('userName');
+                    const avatarEl = document.getElementById('userAvatar');
+                    if (nameEl) nameEl.textContent = authState.user.name || authState.user.login;
+                    if (avatarEl) avatarEl.src = authState.user.avatar_url;
+                }
+            } else {
+                if (loginArea) loginArea.style.display = 'block';
+                if (userArea) userArea.style.display = 'none';
+                if (wrapper) wrapper.classList.add('locked');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+
+            // Login buttons routing
+            document.body.addEventListener('click', (e) => {
+                const loginBtn = e.target.closest('.github-login-btn');
+                if (loginBtn) {
+                    e.preventDefault();
+                    window.location.href = '/login';
+                }
+            });
+
+            // Close modal button
+            const closeModalBtn = document.getElementById('closeAuthModal');
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('authModal');
+                    if (modal) modal.classList.remove('open');
+                });
+            }
+        });
+
         /* =====================  HERO 3D SCENE  ===================== */
         (function initHero() {
             const canvas = document.getElementById('heroCanvas');
@@ -2153,7 +2416,16 @@
             const C = 2 * Math.PI * 50;
 
             document.querySelectorAll('[data-sample]').forEach(b => {
-                b.onclick = () => { input.value = b.dataset.sample; input.focus(); };
+                b.onclick = (e) => {
+                    if (!authState.isAuthenticated) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        document.getElementById('authModal').classList.add('open');
+                        return;
+                    }
+                    input.value = b.dataset.sample;
+                    input.focus();
+                };
             });
 
             function setStatus(text, kind) {
