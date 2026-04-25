@@ -89,9 +89,9 @@ def _apply_city_layout(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return city_data
 
 
-from ml.feature_builder import build_features
-from ml.risk_model import compute_risk_score
-from ml.anomaly_detector import detect_anomalies
+from src.ml.feature_builder import build_features
+from src.ml.risk_model import compute_risk_score
+from src.ml.anomaly_detector import detect_anomalies
 
 def score_files(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
