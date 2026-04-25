@@ -72,6 +72,11 @@ def index() -> Any:
     return send_file(BASE_DIR / "index.html")
 
 
+@app.route('/city')
+def city_view() -> Any:
+    return send_file(BASE_DIR / "city.html")
+
+
 @app.route("/login")
 def login() -> Any:
     """

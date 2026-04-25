@@ -498,12 +498,14 @@
 
                     if (response.ok) {
                         const result = await response.json();
-                        statusMsg.textContent = '✅ Analysis complete. Snapshot saved.';
+                        statusMsg.textContent = '✅ Analysis complete. Opening city view...';
                         statusMsg.style.color = '#00ff88';
                         await refreshModelStatus();
 
-                        // Persist last-known snapshot and repo for reliable GitHub links
+                        let cityDataStored = false;
                         try {
+                            localStorage.setItem('cityData', JSON.stringify(result));
+                            cityDataStored = true;
                             if (result.snapshot && result.snapshot.id) {
                                 localStorage.setItem('codecity_last_snapshot_id', result.snapshot.id);
                             }
@@ -511,36 +513,17 @@
                                 localStorage.setItem('codecity_last_repo_url', result.snapshot.repo_url);
                             }
                         } catch (e) {
-                            console.warn('Could not persist last snapshot info', e);
+                            console.warn('Could not persist city data', e);
                         }
 
-                        // If logged in, refresh snapshots + load the new snapshot
-                        if (isAuthenticated) {
-                            await loadSnapshots();
-                            if (result.snapshot && result.snapshot.id) {
-                                await loadSnapshot(result.snapshot.id);
-                            }
-                        } else {
-                            // For anonymous users, immediately display the returned analysis
-                            try {
-                                if (result && result.data) {
-                                    // Create a transient snapshot in-memory so the 3D city can render
-                                    window.currentSnapshot = {
-                                        meta: result.snapshot || { id: `transient-${Date.now()}`, created_at: new Date().toISOString(), label: 'Transient Analysis' },
-                                        data: result.data,
-                                    };
-                                    currentSnapshotId = window.currentSnapshot.meta.id;
-                                    allData = result.data;
-                                    // Update UI to indicate transient view
-                                    statusMsg.textContent = '🔎 Showing transient analysis (not saved to your account).';
-                                    statusMsg.style.color = '#00ccff';
-                                    // Render the city from the analysis result
-                                    try { await createOrUpdateCity(); } catch (e) { console.warn('Could not render transient city', e); }
-                                }
-                            } catch (e) {
-                                console.warn('Failed to render transient analysis', e);
-                            }
+                        if (!cityDataStored) {
+                            statusMsg.textContent = '⚠️ Analysis complete, but the city view data could not be stored locally.';
+                            statusMsg.style.color = '#ffcc66';
+                            return;
                         }
+
+                        window.location.href = '/city';
+                        return;
                     } else {
                         let errorMsg = `${response.status}: ${response.statusText}`; // Default error
                         try {
