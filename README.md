@@ -35,8 +35,8 @@ Optional:
 ### Running the app
 
 ```bash
-pip install -r CodeCity/requirements.txt
-python CodeCity/app.py
+pip install -r requirements.txt
+python app.py
 ```
 
 Then visit `http://localhost:5100` in your browser.
