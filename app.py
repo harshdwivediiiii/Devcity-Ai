@@ -3817,6 +3817,243 @@ CITY_HTML = r"""{% raw %}<!DOCTYPE html>
         transition-duration: 0.01ms !important;
       }
     }
+    /* ================================================================
+       PRO TOOLS — additive UI for advanced features
+       (Heatmap · Dependencies · Filters · Risk Alerts · Cluster labels ·
+        Smart highlight · Focus exit · AI bottom sheet)
+       Designed to coexist with existing UI; no overrides above.
+    ================================================================ */
+    .pro-toolbar {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 78px);
+      right: 14px;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(18px) saturate(140%);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      box-shadow: var(--shadow-lg);
+      max-width: 220px;
+      transition: opacity var(--t-med) ease, transform var(--t-med) ease;
+    }
+    body.immersive .pro-toolbar { opacity: 0; pointer-events: none; transform: translateX(20px); }
+    .pro-toolbar .pt-title {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      padding: 0 4px 2px;
+    }
+    .pro-toolbar button.pt-btn {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      color: var(--text);
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.02);
+      transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+      user-select: none;
+    }
+    .pro-toolbar button.pt-btn:hover { background: var(--accent-soft); }
+    .pro-toolbar button.pt-btn.active {
+      background: linear-gradient(135deg, var(--accent-soft), rgba(168,85,247,0.18));
+      border-color: var(--panel-border-strong);
+      color: var(--text);
+    }
+    .pro-toolbar button.pt-btn .pt-ic { width: 16px; text-align: center; opacity: 0.9; }
+    .pro-toolbar button.pt-btn:active { transform: scale(0.97); }
+
+    /* Filter chip bar (file types) */
+    .filter-bar {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      top: calc(env(safe-area-inset-top, 0px) + 78px);
+      z-index: 5;
+      display: flex;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
+      box-shadow: var(--shadow-lg);
+      max-width: min(680px, 92vw);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    body.immersive .filter-bar { opacity: 0; pointer-events: none; }
+    .filter-chip {
+      flex: 0 0 auto;
+      font-size: 11px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: var(--text-dim);
+      border: 1px solid var(--panel-border);
+      background: transparent;
+      transition: all var(--t-fast);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .filter-chip:hover { color: var(--text); border-color: var(--panel-border-strong); }
+    .filter-chip.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .filter-chip .cnt {
+      font-size: 9px;
+      opacity: 0.7;
+      margin-left: 4px;
+    }
+
+    /* Exit-focus floating button */
+    .focus-exit {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 78px);
+      left: 14px;
+      z-index: 7;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--panel-strong);
+      border: 1px solid var(--panel-border-strong);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-lg);
+      animation: focusEnter 240ms ease;
+    }
+    .focus-exit.visible { display: inline-flex; }
+    @keyframes focusEnter { from { opacity: 0; transform: translateY(-6px);} to { opacity: 1; transform: none;} }
+
+    /* AI bottom sheet (mobile-first, also visible desktop on demand) */
+    .ai-sheet {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translate(-50%, calc(100% + 24px));
+      width: min(520px, calc(100vw - 28px));
+      z-index: 8;
+      padding: 14px 16px 16px;
+      border-radius: 18px;
+      background: var(--panel-strong);
+      border: 1px solid var(--panel-border-strong);
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      box-shadow: var(--shadow-lg);
+      transition: transform 320ms cubic-bezier(.2,.8,.2,1), opacity 240ms ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .ai-sheet.visible {
+      transform: translate(-50%, 0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .ai-sheet .ai-sheet-grip {
+      width: 38px; height: 4px;
+      border-radius: 2px;
+      background: var(--panel-border-strong);
+      margin: 0 auto 10px;
+    }
+    .ai-sheet .ai-sheet-title {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 13px; font-weight: 700; margin-bottom: 8px;
+    }
+    .ai-sheet .ai-sheet-title button {
+      all: unset; cursor: pointer; padding: 4px 8px;
+      border-radius: 8px; font-size: 11px; color: var(--text-dim);
+      border: 1px solid var(--panel-border);
+    }
+    .ai-sheet .ai-sheet-body {
+      font-size: 12px; line-height: 1.55; color: var(--text-dim);
+      max-height: 38vh; overflow-y: auto;
+    }
+    .ai-sheet .ai-sheet-body strong { color: var(--text); }
+    .ai-sheet .ai-row { display:flex; gap:8px; margin: 6px 0; }
+    .ai-sheet .ai-row .pill {
+      font-size: 10px; padding: 2px 8px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent);
+      border: 1px solid var(--panel-border);
+    }
+    .ai-sheet .ai-row .pill.warn { background: rgba(245,158,11,0.16); color: var(--warning); }
+    .ai-sheet .ai-row .pill.risk { background: rgba(251,113,133,0.16); color: var(--danger); }
+
+    /* Pulsing risk alert ring (DOM overlay around top-risk meshes is too costly;
+       instead we pulse meshes via shader-less material — but we also flash the
+       risky-list rows to call attention). */
+    @keyframes riskFlash {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(251,113,133,0.0); }
+      50%      { box-shadow: 0 0 0 4px rgba(251,113,133,0.35); }
+    }
+    .risky-item.alert {
+      animation: riskFlash 1.6s ease-in-out infinite;
+      border-radius: 8px;
+    }
+
+    /* District labels (HTML overlay) */
+    .district-label {
+      position: fixed;
+      pointer-events: none;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      white-space: nowrap;
+      transition: opacity var(--t-fast);
+      opacity: 0;
+    }
+    .district-label.visible { opacity: 0.9; }
+
+    /* Mobile responsive tweaks for new UI */
+    @media (max-width: 880px) {
+      .pro-toolbar {
+        top: auto;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+        right: 12px;
+        max-width: 54px;
+        padding: 6px;
+      }
+      .pro-toolbar .pt-title { display: none; }
+      .pro-toolbar button.pt-btn { padding: 8px; font-size: 0; gap: 0; }
+      .pro-toolbar button.pt-btn .pt-ic { font-size: 14px; }
+      .filter-bar {
+        top: calc(env(safe-area-inset-top, 0px) + 70px);
+        max-width: calc(100vw - 24px);
+      }
+      .focus-exit {
+        top: calc(env(safe-area-inset-top, 0px) + 70px);
+        left: 12px;
+      }
+    }
   </style>
 </head>
 
@@ -5170,7 +5407,558 @@ Consider splitting this module into smaller responsibilities and adding test cov
       animate();
     }
 
+    /* ================================================================
+       PRO TOOLS — Advanced features (additive, non-breaking)
+       Hooks into existing State + meshes; never mutates existing handlers.
+    ================================================================ */
+    const ProTools = (() => {
+      const state = {
+        heatmap: false,
+        deps: false,
+        alerts: false,
+        clusters: false,
+        focused: null,         // mesh currently in focus mode
+        depsGroup: null,       // THREE.Group of dependency lines
+        heatmapMesh: null,     // ground heat plane
+        districtLabels: [],    // {el, x, z}
+        activeFilters: new Set(),  // empty = show all
+        allExtensions: [],
+      };
+
+      function ext(path) {
+        const m = String(path || '').match(/\.([a-zA-Z0-9]+)$/);
+        return m ? m[1].toLowerCase() : 'other';
+      }
+
+      /* ---------- Inject DOM ---------- */
+      function injectDOM() {
+        // Pro toolbar
+        const tb = document.createElement('aside');
+        tb.className = 'pro-toolbar';
+        tb.id = 'pro-toolbar';
+        tb.innerHTML = `
+          <div class="pt-title">Pro Tools</div>
+          <button class="pt-btn" id="pt-heatmap" title="Toggle risk heatmap"><span class="pt-ic">🔥</span><span>Heatmap</span></button>
+          <button class="pt-btn" id="pt-deps" title="Toggle dependency lines"><span class="pt-ic">🔗</span><span>Dependencies</span></button>
+          <button class="pt-btn" id="pt-alerts" title="Pulse top risky files"><span class="pt-ic">⚠️</span><span>Risk Alerts</span></button>
+          <button class="pt-btn" id="pt-clusters" title="Show district labels"><span class="pt-ic">🏘</span><span>Clusters</span></button>
+          <button class="pt-btn" id="pt-worst" title="Highlight & tour the 10 worst files"><span class="pt-ic">🧠</span><span>Worst 10</span></button>
+          <button class="pt-btn" id="pt-ai-sheet" title="Show AI insight sheet"><span class="pt-ic">🤖</span><span>AI Sheet</span></button>
+        `;
+        document.body.appendChild(tb);
+
+        // Filter chip bar
+        const fb = document.createElement('div');
+        fb.className = 'filter-bar';
+        fb.id = 'filter-bar';
+        document.body.appendChild(fb);
+
+        // Focus-exit button
+        const fx = document.createElement('button');
+        fx.className = 'focus-exit';
+        fx.id = 'focus-exit';
+        fx.innerHTML = '✕ Exit Focus';
+        document.body.appendChild(fx);
+
+        // AI Bottom Sheet
+        const sheet = document.createElement('div');
+        sheet.className = 'ai-sheet';
+        sheet.id = 'ai-sheet';
+        sheet.innerHTML = `
+          <div class="ai-sheet-grip"></div>
+          <div class="ai-sheet-title">
+            <span>🤖 AI Insight</span>
+            <button id="ai-sheet-close">Close</button>
+          </div>
+          <div class="ai-sheet-body" id="ai-sheet-body">
+            Tap any building for contextual AI insights.
+          </div>
+        `;
+        document.body.appendChild(sheet);
+      }
+
+      /* ---------- Heatmap ---------- */
+      function buildHeatmap() {
+        if (!State.bounds || !State.scene) return;
+        clearHeatmap();
+        const cw = State.bounds.maxX - State.bounds.minX;
+        const cd = State.bounds.maxY - State.bounds.minY;
+        const size = Math.max(80, Math.max(cw, cd)) * 1.4;
+        // Build a canvas texture sampling risk density
+        const RES = 128;
+        const cnv = document.createElement('canvas');
+        cnv.width = RES; cnv.height = RES;
+        const ctx = cnv.getContext('2d');
+        ctx.fillStyle = 'rgba(0,0,0,0)';
+        ctx.fillRect(0, 0, RES, RES);
+        const cx = (State.bounds.minX + State.bounds.maxX) / 2;
+        const cy = (State.bounds.minY + State.bounds.maxY) / 2;
+        // Splatter risk gradients
+        State.files.forEach((f) => {
+          const r = clamp(f.risk_score || 0, 0, 1);
+          if (r < 0.05) return;
+          const u = ((f.x + f.w / 2 - cx) / size + 0.5) * RES;
+          const v = ((f.y + f.d / 2 - cy) / size + 0.5) * RES;
+          const rad = Math.max(8, Math.sqrt(f.size) * 1.2 * (RES / size));
+          const grad = ctx.createRadialGradient(u, v, 0, u, v, rad);
+          // green->yellow->red
+          const col = r < 0.33 ? `rgba(34,197,94,${0.4 * r + 0.2})`
+                    : r < 0.66 ? `rgba(245,158,11,${0.6 * r})`
+                               : `rgba(239,68,68,${0.55 + 0.4 * r})`;
+          grad.addColorStop(0, col);
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath(); ctx.arc(u, v, rad, 0, Math.PI * 2); ctx.fill();
+        });
+        const tex = new THREE.CanvasTexture(cnv);
+        tex.minFilter = THREE.LinearFilter;
+        const mat = new THREE.MeshBasicMaterial({
+          map: tex, transparent: true, opacity: 0, depthWrite: false
+        });
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.y = 0.18; // just above ground/grid
+        plane.renderOrder = 2;
+        State.scene.add(plane);
+        state.heatmapMesh = plane;
+        // Fade in
+        const start = performance.now();
+        (function fade() {
+          const t = clamp((performance.now() - start) / 500, 0, 1);
+          mat.opacity = 0.85 * t;
+          if (t < 1) requestAnimationFrame(fade);
+        })();
+      }
+      function clearHeatmap() {
+        if (state.heatmapMesh) {
+          State.scene.remove(state.heatmapMesh);
+          state.heatmapMesh.geometry.dispose();
+          if (state.heatmapMesh.material.map) state.heatmapMesh.material.map.dispose();
+          state.heatmapMesh.material.dispose();
+          state.heatmapMesh = null;
+        }
+      }
+      function toggleHeatmap() {
+        state.heatmap = !state.heatmap;
+        $('pt-heatmap').classList.toggle('active', state.heatmap);
+        if (state.heatmap) buildHeatmap(); else clearHeatmap();
+        showToast(state.heatmap ? '🔥 Heatmap mode on' : 'Heatmap off');
+      }
+
+      /* ---------- Dependency lines ---------- */
+      function extractDeps() {
+        // Look for dep info on each file: deps / dependencies / imports / edges (array of paths)
+        // Also accept payload.edges = [{from, to}]
+        const map = new Map(State.files.map((f) => [f.path, f]));
+        const edges = [];
+        const payload = State.payload || {};
+        if (Array.isArray(payload.edges)) {
+          payload.edges.forEach((e) => {
+            const a = map.get(e.from || e.source); const b = map.get(e.to || e.target);
+            if (a && b) edges.push([a, b]);
+          });
+        }
+        State.files.forEach((f) => {
+          const list = f.deps || f.dependencies || f.imports || [];
+          if (!Array.isArray(list)) return;
+          list.forEach((p) => {
+            const target = map.get(p) || State.files.find((x) => x.path && x.path.endsWith(p));
+            if (target && target !== f) edges.push([f, target]);
+          });
+        });
+        return edges;
+      }
+      function buildDeps() {
+        clearDeps();
+        const edges = extractDeps();
+        if (!edges.length) {
+          showToast('No dependency data in payload');
+          state.deps = false;
+          $('pt-deps').classList.remove('active');
+          return;
+        }
+        const grp = new THREE.Group();
+        const mat = new THREE.LineBasicMaterial({
+          color: 0x38bdf8, transparent: true, opacity: 0.55
+        });
+        const cx = (State.bounds.minX + State.bounds.maxX) / 2;
+        const cy = (State.bounds.minY + State.bounds.maxY) / 2;
+        edges.forEach(([a, b]) => {
+          const ax = a.x + a.w / 2 - cx, az = a.y + a.d / 2 - cy;
+          const bx = b.x + b.w / 2 - cx, bz = b.y + b.d / 2 - cy;
+          const ay = a.h * 0.6, by = b.h * 0.6;
+          // Curve: midpoint lifted
+          const mid = new THREE.Vector3((ax + bx) / 2, Math.max(ay, by) + 12, (az + bz) / 2);
+          const curve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(ax, ay, az), mid, new THREE.Vector3(bx, by, bz)
+          );
+          const pts = curve.getPoints(20);
+          const geo = new THREE.BufferGeometry().setFromPoints(pts);
+          grp.add(new THREE.Line(geo, mat));
+        });
+        State.scene.add(grp);
+        state.depsGroup = grp;
+        showToast(`🔗 ${edges.length} dependency edge${edges.length !== 1 ? 's' : ''}`);
+      }
+      function clearDeps() {
+        if (state.depsGroup) {
+          State.scene.remove(state.depsGroup);
+          state.depsGroup.traverse((o) => {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) o.material.dispose();
+          });
+          state.depsGroup = null;
+        }
+      }
+      function toggleDeps() {
+        state.deps = !state.deps;
+        $('pt-deps').classList.toggle('active', state.deps);
+        if (state.deps) buildDeps(); else { clearDeps(); showToast('Dependencies hidden'); }
+      }
+
+      /* ---------- Risk alerts (pulsing top 5) ---------- */
+      function setAlerts(on) {
+        state.alerts = on;
+        $('pt-alerts').classList.toggle('active', on);
+        const top = [...State.files]
+          .sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0))
+          .slice(0, 5)
+          .map((f) => f.path);
+        const set = new Set(top);
+        State.meshes.forEach((m) => {
+          m.userData.isAlert = on && set.has(m.userData.file.path);
+        });
+        // Mirror in risky list rows
+        document.querySelectorAll('.risky-item').forEach((row) => {
+          if (on) row.classList.add('alert'); else row.classList.remove('alert');
+        });
+        showToast(on ? '⚠️ Risk alerts on' : 'Risk alerts off');
+      }
+      function toggleAlerts() { setAlerts(!state.alerts); }
+      function tickAlerts(now) {
+        if (!state.alerts) return;
+        const k = 0.5 + 0.5 * Math.sin(now * 0.006);
+        State.meshes.forEach((m) => {
+          if (m.userData.isAlert) {
+            m.material.emissiveIntensity = 0.5 + k * 0.6;
+          }
+        });
+      }
+
+      /* ---------- Cluster (district) labels ---------- */
+      function buildClusterLabels() {
+        clearClusterLabels();
+        if (!State.bounds) return;
+        const groups = new Map();
+        const cx = (State.bounds.minX + State.bounds.maxX) / 2;
+        const cy = (State.bounds.minY + State.bounds.maxY) / 2;
+        State.files.forEach((f) => {
+          const k = f.directory || '/';
+          if (!groups.has(k)) groups.set(k, { sx: 0, sz: 0, n: 0 });
+          const g = groups.get(k);
+          g.sx += f.x + f.w / 2 - cx;
+          g.sz += f.y + f.d / 2 - cy;
+          g.n++;
+        });
+        groups.forEach((g, dir) => {
+          const el = document.createElement('div');
+          el.className = 'district-label';
+          el.textContent = (dir === '/' ? 'root' : dir.split('/').pop() || dir);
+          el.title = dir;
+          document.body.appendChild(el);
+          state.districtLabels.push({ el, x: g.sx / g.n, z: g.sz / g.n });
+        });
+        // trigger fade-in
+        requestAnimationFrame(() => state.districtLabels.forEach((d) => d.el.classList.add('visible')));
+      }
+      function clearClusterLabels() {
+        state.districtLabels.forEach((d) => d.el.remove());
+        state.districtLabels = [];
+      }
+      function tickClusterLabels() {
+        if (!state.clusters || !state.districtLabels.length || !State.camera) return;
+        const v = new THREE.Vector3();
+        const W = window.innerWidth, H = window.innerHeight;
+        state.districtLabels.forEach((d) => {
+          v.set(d.x, 6, d.z).project(State.camera);
+          const sx = (v.x * 0.5 + 0.5) * W;
+          const sy = (-v.y * 0.5 + 0.5) * H;
+          const onScreen = v.z > -1 && v.z < 1;
+          d.el.style.left = sx + 'px';
+          d.el.style.top = sy + 'px';
+          d.el.style.opacity = onScreen ? '0.9' : '0';
+        });
+      }
+      function toggleClusters() {
+        state.clusters = !state.clusters;
+        $('pt-clusters').classList.toggle('active', state.clusters);
+        if (state.clusters) buildClusterLabels();
+        else clearClusterLabels();
+      }
+
+      /* ---------- File-type filters ---------- */
+      function buildFilterBar() {
+        const bar = $('filter-bar');
+        bar.innerHTML = '';
+        const counts = new Map();
+        State.files.forEach((f) => {
+          const e = ext(f.path || f.name);
+          counts.set(e, (counts.get(e) || 0) + 1);
+        });
+        const exts = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+        state.allExtensions = exts.map((e) => e[0]);
+        // "All" chip
+        const allChip = document.createElement('button');
+        allChip.className = 'filter-chip active';
+        allChip.dataset.ext = '__all__';
+        allChip.innerHTML = `All <span class="cnt">${State.files.length}</span>`;
+        bar.appendChild(allChip);
+        exts.slice(0, 14).forEach(([e, c]) => {
+          const chip = document.createElement('button');
+          chip.className = 'filter-chip';
+          chip.dataset.ext = e;
+          chip.innerHTML = `.${e} <span class="cnt">${c}</span>`;
+          bar.appendChild(chip);
+        });
+        bar.addEventListener('click', (ev) => {
+          const chip = ev.target.closest('.filter-chip');
+          if (!chip) return;
+          const e = chip.dataset.ext;
+          if (e === '__all__') {
+            state.activeFilters.clear();
+            bar.querySelectorAll('.filter-chip').forEach((c) => c.classList.remove('active'));
+            chip.classList.add('active');
+          } else {
+            bar.querySelector('[data-ext="__all__"]').classList.remove('active');
+            chip.classList.toggle('active');
+            if (chip.classList.contains('active')) state.activeFilters.add(e);
+            else state.activeFilters.delete(e);
+            if (!state.activeFilters.size) {
+              bar.querySelector('[data-ext="__all__"]').classList.add('active');
+            }
+          }
+          applyFilters();
+        }, { once: false });
+      }
+      function applyFilters() {
+        const active = state.activeFilters;
+        State.meshes.forEach((m) => {
+          const e = ext(m.userData.file.path || m.userData.file.name);
+          const visible = !active.size || active.has(e);
+          // Smooth: use opacity, keep raycast for visible only
+          if (visible) {
+            m.visible = true;
+            m.material.transparent = false;
+            m.material.opacity = 1;
+          } else {
+            m.material.transparent = true;
+            const start = m.material.opacity;
+            tweenValue(start, 0.04, 280, (v) => {
+              m.material.opacity = v;
+              if (v <= 0.06) m.visible = false; else m.visible = true;
+            });
+          }
+        });
+      }
+
+      /* ---------- Smart highlight: top 10 worst, sequential focus ---------- */
+      let worstSeq = null;
+      function showWorst() {
+        const worst = [...State.files]
+          .sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0))
+          .slice(0, 10);
+        if (!worst.length) return;
+        // Dim everything not in worst
+        const set = new Set(worst.map((f) => f.path));
+        State.meshes.forEach((m) => {
+          const inSet = set.has(m.userData.file.path);
+          m.material.transparent = !inSet;
+          m.material.opacity = inSet ? 1 : 0.1;
+          if (inSet) {
+            m.userData.isAlert = true; // pulse
+          }
+        });
+        $('pt-worst').classList.add('active');
+        showToast('🧠 Touring 10 worst files…');
+        let i = 0;
+        if (worstSeq) clearInterval(worstSeq);
+        const tour = () => {
+          if (i >= worst.length) {
+            clearInterval(worstSeq); worstSeq = null;
+            showToast('Tour complete · tap Worst 10 again to reset');
+            return;
+          }
+          const f = worst[i++];
+          const m = State.meshes.find((mm) => mm.userData.file.path === f.path);
+          if (m) { selectMesh(m); flyToMesh(m, { distanceFactor: 2.4, duration: 1100 }); pushAISheet(f); }
+        };
+        tour();
+        worstSeq = setInterval(tour, 2600);
+      }
+      function resetWorst() {
+        if (worstSeq) { clearInterval(worstSeq); worstSeq = null; }
+        State.meshes.forEach((m) => {
+          m.material.transparent = false;
+          m.material.opacity = 1;
+          m.userData.isAlert = state.alerts && m.userData.isAlert;
+        });
+        $('pt-worst').classList.remove('active');
+      }
+      function toggleWorst() {
+        if ($('pt-worst').classList.contains('active')) resetWorst();
+        else showWorst();
+      }
+
+      /* ---------- Focus mode (with exit button) ---------- */
+      function enterFocus(mesh) {
+        state.focused = mesh;
+        $('focus-exit').classList.add('visible');
+      }
+      function exitFocus() {
+        state.focused = null;
+        $('focus-exit').classList.remove('visible');
+        State.meshes.forEach((m) => { m.material.transparent = false; m.material.opacity = 1; });
+        deselect();
+        if (State.bounds) {
+          const cw = State.bounds.maxX - State.bounds.minX;
+          const cd = State.bounds.maxY - State.bounds.minY;
+          const dist = Math.max(cw, cd) * 1.15;
+          animateCamera(
+            new THREE.Vector3(dist * 0.75, State.bounds.maxH + dist * 0.55, dist),
+            new THREE.Vector3(0, State.bounds.maxH * 0.22, 0),
+            900
+          );
+        }
+      }
+
+      /* ---------- AI Insight Sheet ---------- */
+      function pushAISheet(file) {
+        const sheet = $('ai-sheet');
+        const body = $('ai-sheet-body');
+        const r = file.risk_score || 0;
+        const tag = r >= 0.66 ? '<span class="pill risk">High Risk</span>'
+                  : r >= 0.33 ? '<span class="pill warn">Watch</span>'
+                              : '<span class="pill">Healthy</span>';
+        const reasons = [];
+        if (file.complexity > 30) reasons.push(`High cyclomatic complexity (${file.complexity.toFixed(1)})`);
+        if (file.size > 400) reasons.push(`Large file (${file.size} LOC) — hard to reason about`);
+        if (r > 0.5) reasons.push(`Elevated risk score (${r.toFixed(2)}) — frequent change-magnet`);
+        if (!reasons.length) reasons.push('No major risk signals detected.');
+        const suggestions = [];
+        if (file.complexity > 30) suggestions.push('Extract helper functions / strategy objects to flatten branching.');
+        if (file.size > 400) suggestions.push('Split into smaller modules by responsibility (~200 LOC ceiling).');
+        if (r > 0.5) suggestions.push('Add focused tests before any further changes; isolate side-effects.');
+        if (!suggestions.length) suggestions.push('Looks healthy — keep current patterns.');
+
+        body.innerHTML = `
+          <div class="ai-row">${tag}<strong>${file.name}</strong></div>
+          <div style="font-size:11px;color:var(--text-faint);margin-bottom:6px;">${file.path || ''}</div>
+          <div><strong>Why it matters</strong><ul style="margin:4px 0 8px 18px;padding:0;">
+            ${reasons.map((x) => `<li>${x}</li>`).join('')}
+          </ul></div>
+          <div><strong>Suggested improvements</strong><ul style="margin:4px 0 0 18px;padding:0;">
+            ${suggestions.map((x) => `<li>${x}</li>`).join('')}
+          </ul></div>
+        `;
+        sheet.classList.add('visible');
+      }
+      function hideAISheet() { $('ai-sheet').classList.remove('visible'); }
+
+      /* ---------- Wiring ---------- */
+      function wire() {
+        $('pt-heatmap').addEventListener('click', toggleHeatmap);
+        $('pt-deps').addEventListener('click', toggleDeps);
+        $('pt-alerts').addEventListener('click', toggleAlerts);
+        $('pt-clusters').addEventListener('click', toggleClusters);
+        $('pt-worst').addEventListener('click', toggleWorst);
+        $('pt-ai-sheet').addEventListener('click', () => {
+          if ($('ai-sheet').classList.contains('visible')) hideAISheet();
+          else if (State.selectedMesh) pushAISheet(State.selectedMesh.userData.file);
+          else showToast('Tap a building first');
+        });
+        $('ai-sheet-close').addEventListener('click', hideAISheet);
+        $('focus-exit').addEventListener('click', exitFocus);
+
+        // Hook clicks: when a building is clicked, push AI sheet + register focus
+        // (We listen at capture phase on canvas so existing onClick still runs.)
+        const dom = State.renderer && State.renderer.domElement;
+        if (dom) {
+          dom.addEventListener('click', () => {
+            // Defer one frame so existing handler sets selectedMesh first
+            requestAnimationFrame(() => {
+              if (State.selectedMesh) {
+                pushAISheet(State.selectedMesh.userData.file);
+                enterFocus(State.selectedMesh);
+              }
+            });
+          });
+          dom.addEventListener('dblclick', () => {
+            requestAnimationFrame(() => {
+              if (State.selectedMesh) {
+                pushAISheet(State.selectedMesh.userData.file);
+                enterFocus(State.selectedMesh);
+              }
+            });
+          });
+        }
+
+        // Rebuild filter bar after city built (handles snapshot changes too)
+        buildFilterBar();
+      }
+
+      /* ---------- Per-frame tick ---------- */
+      function tick(now) {
+        tickAlerts(now);
+        tickClusterLabels();
+      }
+
+      return {
+        init() {
+          injectDOM();
+          // Defer wiring until scene is ready (boot() calls initScene + buildCity)
+          requestAnimationFrame(() => {
+            if (!State.renderer) return setTimeout(this.init.bind(this), 60);
+            wire();
+          });
+        },
+        tick,
+        rebuildAfterSnapshot() {
+          // Called when the user changes snapshot via timeline
+          buildFilterBar();
+          if (state.heatmap) buildHeatmap();
+          if (state.deps) buildDeps();
+          if (state.clusters) buildClusterLabels();
+          if (state.alerts) setAlerts(true);
+        }
+      };
+    })();
+
+    /* Hook into the existing animate loop without modifying it:
+       Wrap requestAnimationFrame on first call by patching renderer.render once
+       — simpler approach: just attach a separate rAF that runs in parallel. */
+    (function startProToolsTicker() {
+      function loop(now) {
+        ProTools.tick(now);
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    })();
+
+    /* Patch timeline change to refresh ProTools-built artifacts */
+    (function hookSnapshotChange() {
+      const origSlider = document.getElementById('timeline-slider');
+      if (!origSlider) return;
+      origSlider.addEventListener('input', () => {
+        // Run after existing handler rebuilds the city
+        setTimeout(() => ProTools.rebuildAfterSnapshot(), 50);
+      });
+    })();
+
+    /* Initialize ProTools after boot */
+    const _origBoot = typeof boot === 'function' ? boot : null;
+
     boot();
+    ProTools.init();
   </script>
 </body>
 
