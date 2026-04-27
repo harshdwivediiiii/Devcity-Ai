@@ -1998,7 +1998,7 @@ INDEX_HTML = r"""{% raw %}<!DOCTYPE html>
                 <div class="actions">
                     <a href="#analyze" class="btn btn-primary"
                         onclick="document.getElementById('repoInput').focus(); return false;">Analyze a repo →</a>
-                    <a href="city.html" class="btn">Open last analysis</a>
+                    <a href="/city" class="btn">Open last analysis</a>
                 </div>
             </div>
         </section>
@@ -2595,11 +2595,11 @@ INDEX_HTML = r"""{% raw %}<!DOCTYPE html>
                     }
 
                     if (!res.ok) throw new Error(data.error || 'Analyze failed');
-                    // Persist for city.html
+                    // Persist for /city
                     try { localStorage.setItem('cityData', JSON.stringify(data)); } catch { }
                     applyInsights(data);
                     setStatus(`✓ Analyzed ${data.snapshot?.repo_url || repo} · ${data.snapshot?.file_count || 0} files. Opening city…`, 'success');
-                    setTimeout(() => { window.location.href = 'city.html'; }, 900);
+                    setTimeout(() => { window.location.href = '/city'; }, 900);
                 } catch (err) {
                     console.error("Analysis Error:", err);
                     setStatus('✗ ' + (err.message || 'Could not analyze that repo'), 'error');
@@ -2616,7 +2616,7 @@ INDEX_HTML = r"""{% raw %}<!DOCTYPE html>
             const list = document.getElementById('cmdList');
             const items = [
                 { label: 'Analyze a repo', kbd: '↵', do: () => { close(); document.getElementById('repoInput').focus(); } },
-                { label: 'Open dashboard (last analysis)', kbd: 'D', do: () => location.href = 'city.html' },
+                { label: 'Open dashboard (last analysis)', kbd: 'D', do: () => location.href = '/city' },
                 { label: 'Jump to: How it works', kbd: '1', do: () => { close(); document.getElementById('how').scrollIntoView({ behavior: 'smooth' }); } },
                 { label: 'Jump to: AI Insights', kbd: '2', do: () => { close(); document.getElementById('insights').scrollIntoView({ behavior: 'smooth' }); } },
                 { label: 'Jump to: Compare', kbd: '3', do: () => { close(); document.getElementById('compare').scrollIntoView({ behavior: 'smooth' }); } },
