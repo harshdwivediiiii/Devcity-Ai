@@ -2,7 +2,7 @@
 
 DevCity AI transforms GitHub repositories into interactive 3D city visualizations, augmented with data-driven risk and anomaly scoring. Engineered as an end-to-end machine learning system, this project demonstrates production-grade data engineering, predictive modeling, and full-stack architecture for real-world software analytics.
 
-This project is now live at: 
+This project is now live at: https://devcity-ai-1.onrender.com/
 
 ## System Overview
 
