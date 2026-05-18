@@ -1,30 +1,30 @@
-🤝 Contributing to DevCity AI
+# 🤝 Contributing to DevCity AI
 
-First off, thank you for considering contributing to DevCity AI 🚀
+First off, thank you for considering contributing to **DevCity AI** 🚀  
 We welcome contributions from developers, designers, AI engineers, DevOps engineers, technical writers, and open-source enthusiasts.
 
 ---
 
-📌 Table of Contents
+# 📌 Table of Contents
 
-- "Code of Conduct" (#-code-of-conduct)
-- "Ways to Contribute" (#-ways-to-contribute)
-- "Development Setup" (#-development-setup)
-- "Environment Variables" (#-environment-variables)
-- "Issue Assignment Policy" (#-issue-assignment-policy)
-- "Branch Naming Convention" (#-branch-naming-convention)
-- "Commit Message Guidelines" (#-commit-message-guidelines)
-- "Pull Request Process" (#-pull-request-process)
-- "Coding Standards" (#-coding-standards)
-- "Testing Guidelines" (#-testing-guidelines)
-- "Issue Guidelines" (#-issue-guidelines)
-- "Security Policy" (#-security-policy)
-- "Feature Requests" (#-feature-requests)
-- "Architecture Principles" (#-architecture-principles)
+- [Code of Conduct](#-code-of-conduct)
+- [Ways to Contribute](#-ways-to-contribute)
+- [Development Setup](#-development-setup)
+- [Environment Variables](#-environment-variables)
+- [Issue Assignment Policy](#-issue-assignment-policy)
+- [Branch Naming Convention](#-branch-naming-convention)
+- [Commit Message Guidelines](#-commit-message-guidelines)
+- [Pull Request Process](#-pull-request-process)
+- [Coding Standards](#-coding-standards)
+- [Testing Guidelines](#-testing-guidelines)
+- [Issue Guidelines](#-issue-guidelines)
+- [Security Policy](#-security-policy)
+- [Feature Requests](#-feature-requests)
+- [Architecture Principles](#-architecture-principles)
 
 ---
 
-📜 Code of Conduct
+# 📜 Code of Conduct
 
 By participating in this project, you agree to:
 
@@ -37,18 +37,18 @@ Any abusive behavior may result in restricted repository access.
 
 ---
 
-🚀 Ways to Contribute
+# 🚀 Ways to Contribute
 
 You can contribute by:
 
-🐛 Reporting Bugs
+## 🐛 Reporting Bugs
 
 - UI issues
 - Rendering problems
 - Performance bottlenecks
 - Security vulnerabilities
 
-✨ Adding Features
+## ✨ Adding Features
 
 Examples:
 
@@ -58,14 +58,14 @@ Examples:
 - Dependency scanning
 - CI/CD integrations
 
-📚 Improving Documentation
+## 📚 Improving Documentation
 
 - README improvements
 - Architecture diagrams
 - Setup instructions
 - API docs
 
-⚡ Performance Optimization
+## ⚡ Performance Optimization
 
 - Three.js optimization
 - GPU rendering improvements
@@ -74,49 +74,57 @@ Examples:
 
 ---
 
-🛠 Development Setup
+# 🛠 Development Setup
 
-1. Fork the Repository
+## 1. Fork the Repository
 
+```bash
 git clone https://github.com/your-username/devcity-ai.git
 cd devcity-ai
+```
 
-2. Create Virtual Environment
+## 2. Create Virtual Environment
 
+```bash
 python -m venv venv
 source venv/bin/activate
+```
 
-3. Install Dependencies
+## 3. Install Dependencies
 
+```bash
 pip install -r requirements.txt
+```
 
 ---
 
-🔐 Environment Variables
+# 🔐 Environment Variables
 
-Create a ".env" file in the project root:
+Create a `.env` file in the project root:
 
+```env
 SECRET_KEY=your_secret_key
 GITHUB_CLIENT_ID=your_client_id
 GITHUB_CLIENT_SECRET=your_client_secret
+```
 
-«⚠️ Never commit ".env" files or secrets to GitHub.
-Add ".env" to ".gitignore".»
+> ⚠️ Never commit `.env` files or secrets to GitHub.  
+> Add `.env` to `.gitignore`.
 
 ---
 
-🎯 Issue Assignment Policy
+# 🎯 Issue Assignment Policy
 
 To maintain organized collaboration and avoid duplicate work:
 
-- Do not work on issues that are not assigned to you.
+- Do **not** work on issues that are not assigned to you.
 - Unassigned pull requests may be closed without review.
 - Before starting work:
   1. Comment on the issue
   2. Request assignment
   3. Wait for maintainer approval
 
-Why This Policy Exists
+## Why This Policy Exists
 
 This helps:
 
@@ -125,7 +133,7 @@ This helps:
 - improve collaboration
 - maintain clean project management
 
-Exceptions
+## Exceptions
 
 Small fixes such as:
 
@@ -135,48 +143,54 @@ Small fixes such as:
 
 may not require assignment unless maintainers specify otherwise.
 
-Recommended Workflow
+## Recommended Workflow
 
+```text
 1. Find an issue
 2. Request assignment
 3. Wait for approval
 4. Create branch
 5. Start development
+```
 
 ---
 
-🌿 Branch Naming Convention
+# 🌿 Branch Naming Convention
 
 Use descriptive branch names:
 
+```bash
 feature/ai-risk-heatmap
 bugfix/render-timeout-fix
 hotfix/oauth-session-bug
 docs/readme-update
+```
 
 ---
 
-📝 Commit Message Guidelines
+# 📝 Commit Message Guidelines
 
 Follow Conventional Commits:
 
+```bash
 feat: add PR intelligence engine
 fix: resolve websocket reconnect issue
 docs: improve deployment instructions
 refactor: optimize repository parser
+```
 
 ---
 
-🔄 Pull Request Process
+# 🔄 Pull Request Process
 
-Before Submitting
+## Before Submitting
 
 - Ensure code builds successfully
 - Run tests locally
 - Verify linting passes
 - Keep PRs focused and atomic
 
-PR Requirements
+## PR Requirements
 
 Include:
 
@@ -185,38 +199,43 @@ Include:
 - linked issue number
 - testing notes
 
-Example PR Template
+## Example PR Template
 
+```md
 ## Description
+
 Added async worker queue support for repository analysis.
 
 ## Changes
+
 - Integrated Redis queue
 - Added task progress endpoint
 - Updated frontend polling logic
 
 ## Related Issue
+
 Closes #42
+```
 
 ---
 
-💻 Coding Standards
+# 💻 Coding Standards
 
-Backend
+## Backend
 
 - Follow PEP8
 - Use type hints
 - Keep functions modular
 - Avoid monolithic route handlers
 
-Frontend
+## Frontend
 
 - Reusable components only
 - Avoid hardcoded values
 - Optimize WebGL rendering
 - Use lazy loading where possible
 
-AI Systems
+## AI Systems
 
 - Avoid hallucinated outputs
 - Add confidence scoring
@@ -224,17 +243,21 @@ AI Systems
 
 ---
 
-🧪 Testing Guidelines
+# 🧪 Testing Guidelines
 
-Backend Tests
+## Backend Tests
 
+```bash
 pytest
+```
 
-Frontend Tests
+## Frontend Tests
 
+```bash
 npm test
+```
 
-Performance Validation
+## Performance Validation
 
 Ensure:
 
@@ -244,43 +267,50 @@ Ensure:
 
 ---
 
-📦 Dependency Management
+# 📦 Dependency Management
 
 Always pin versions:
 
+```txt
 Flask==3.0.2
 pandas==2.2.1
 scikit-learn==1.4.0
+```
 
 Do not introduce unnecessary dependencies.
 
 ---
 
-🐞 Issue Guidelines
+# 🐞 Issue Guidelines
 
-Good Bug Reports Include
+## Good Bug Reports Include
 
 - reproduction steps
 - screenshots/logs
 - browser/environment info
 - expected behavior
 
-Example
+## Example
 
+```md
 ### Bug
+
 3D city crashes on repositories larger than 1000 files.
 
 ### Steps to Reproduce
+
 1. Open app
 2. Analyze large monorepo
 3. Orbit camera rapidly
 
 ### Expected Behavior
+
 Stable rendering without GPU crash.
+```
 
 ---
 
-🔒 Security Policy
+# 🔒 Security Policy
 
 Please DO NOT publicly disclose security vulnerabilities.
 
@@ -298,7 +328,7 @@ Examples:
 
 ---
 
-💡 Feature Requests
+# 💡 Feature Requests
 
 Feature proposals should include:
 
@@ -310,23 +340,23 @@ Feature proposals should include:
 
 ---
 
-🏗 Architecture Principles
+# 🏗 Architecture Principles
 
 DevCity AI follows these principles:
 
-1. Async-First Processing
+## 1. Async-First Processing
 
 Heavy repository analysis must never block request threads.
 
-2. Scalable Visualization
+## 2. Scalable Visualization
 
 Rendering systems should support very large repositories efficiently.
 
-3. Security by Default
+## 3. Security by Default
 
 Untrusted repositories must always be sandboxed.
 
-4. Explainable AI
+## 4. Explainable AI
 
 AI recommendations should include:
 
@@ -334,13 +364,13 @@ AI recommendations should include:
 - confidence
 - traceability
 
-5. Developer Experience First
+## 5. Developer Experience First
 
 Fast, intuitive, production-grade workflows matter.
 
 ---
 
-🌟 Recognition
+# 🌟 Recognition
 
 All contributors will be recognized in:
 
@@ -350,7 +380,7 @@ All contributors will be recognized in:
 
 ---
 
-❤️ Thank You
+# ❤️ Thank You
 
 Your contributions help make DevCity AI better for developers worldwide.
 
