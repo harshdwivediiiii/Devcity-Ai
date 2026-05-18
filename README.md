@@ -176,13 +176,9 @@ We welcome contributions from:
 - security researchers
 - open-source contributors
 
-Please read:
+Before contributing, please read our contribution guidelines:
 
-```txt
-CONTRIBUTING.md
-```
-
-before submitting pull requests.
+👉 [CONTRIBUTING.md](https://github.com/harshdwivediiiii/Devcity-Ai/blob/main/Contributor.md)
 
 ---
 
@@ -201,7 +197,6 @@ before submitting pull requests.
 4. Create feature branch
 5. Start development
 ```
-
 ---
 
 # 🌿 Branch Naming Convention
