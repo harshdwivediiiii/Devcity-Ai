@@ -5982,6 +5982,281 @@ def city_view() -> Any:
     return render_template_string(CITY_HTML)
 
 
+
+OAUTH_CONSENT_HTML = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Connection Request — DevCity AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05060a;
+            --bg-2: #0a0d18;
+            --surface: rgba(15, 19, 33, 0.75);
+            --border: rgba(120, 140, 200, 0.15);
+            --border-hover: rgba(140, 160, 220, 0.35);
+            --text: #e8ecf7;
+            --text-dim: #aab1c8;
+            --accent: #7c5cff;
+            --accent-2: #22d3ee;
+            --grad: linear-gradient(135deg, #7c5cff 0%, #22d3ee 100%);
+            --grad-hover: linear-gradient(135deg, #8c6fff 0%, #3cdfff 100%);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at 50% 0%, var(--bg-2) 0%, var(--bg) 70%);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .ambient-glow {
+            position: absolute;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(124, 92, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 580px;
+            width: 100%;
+            margin: 20px;
+            padding: 40px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(124, 92, 255, 0.05);
+            backdrop-filter: blur(16px);
+            position: relative;
+            z-index: 1;
+            box-sizing: border-box;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: var(--grad);
+            box-shadow: 0 8px 24px rgba(124, 92, 255, 0.3);
+            margin-bottom: 15px;
+        }
+
+        .logo-icon svg {
+            width: 32px;
+            height: 32px;
+            fill: white;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #ffffff 0%, #aab1c8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-dim);
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .info-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 35px;
+        }
+
+        .card {
+            background: rgba(22, 28, 48, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            transition: border-color 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-2);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-content {
+            font-size: 13.5px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .card-content ul {
+            margin: 6px 0 0 0;
+            padding-left: 20px;
+        }
+
+        .card-content li {
+            margin-bottom: 4px;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(124, 92, 255, 0.1);
+            color: #d4c5ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            border: none;
+            transition: all 0.2s;
+            text-align: center;
+            cursor: pointer;
+            display: inline-block;
+            box-sizing: border-box;
+        }
+
+        .btn-primary {
+            background: var(--grad);
+            color: white;
+            box-shadow: 0 4px 15px rgba(124, 92, 255, 0.25);
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--grad-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(124, 92, 255, 0.35);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            border-color: var(--border-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+    <div class="container">
+        <div class="logo-area">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+                </svg>
+            </div>
+            <h1>GitHub Connection Request</h1>
+            <p class="subtitle">To visualize your repositories as interactive 3D cities, DevCity AI requires authorization. Please review our permission standards below.</p>
+        </div>
+
+        <div class="info-section">
+            <div class="card">
+                <div class="card-title">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display:inline-block;vertical-align:middle;margin-right:4px;">
+                        <path d="M8 1a2 2 0 0 1 2 2v2H6V3a2 2 0 0 1 2-2zm3 4V3a3 3 0 0 0-6 0v2H2a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3zM2 6h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/>
+                    </svg>
+                    Requested Scopes
+                </div>
+                <div class="card-content">
+                    We request the standard <span class="mono">read:user</span> and <span class="mono">repo</span> scopes. This allows us to:
+                    <ul>
+                        <li>Retrieve your basic profile (avatar and name) for identity visualization.</li>
+                        <li>Access your public and private repositories to analyze structure and complexity.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display:inline-block;vertical-align:middle;margin-right:4px;">
+                        <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-7.1 2H.5a.25.25 0 0 0-.192.41l1.966 2.36a.25.25 0 0 0 .384 0l1.966-2.36A.25.25 0 0 0 4.434 9z"/>
+                        <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+                    </svg>
+                    Token Usage & Storage
+                </div>
+                <div class="card-content">
+                    <strong>Read-Only Analysis Policy:</strong> We perform static scanning only. We will never commit to, modify, or perform write actions on your repositories.
+                    <br><br>
+                    <strong>Session-Only Storage:</strong> Access tokens are held exclusively in temporary encrypted session cookie memory and are never persisted in our databases.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display:inline-block;vertical-align:middle;margin-right:4px;">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                    Revocation Steps
+                </div>
+                <div class="card-content">
+                    You remain in full control. You can revoke authorization instantly at any time by navigating to your GitHub profile settings:
+                    <br>
+                    <span class="mono">Settings -> Applications -> Authorized OAuth Apps -> Revoke DevCity AI</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <a href="/" class="btn btn-secondary">Cancel</a>
+            <a href="/login?consent=true" class="btn btn-primary">Confirm & Connect</a>
+        </div>
+    </div>
+</body>
+</html>"""
+
+
 @app.route("/login")
 def login() -> Any:
     if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
@@ -5989,6 +6264,9 @@ def login() -> Any:
             "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.",
             500,
         )
+
+    if request.args.get("consent") != "true":
+        return render_template_string(OAUTH_CONSENT_HTML)
 
     state = secrets.token_urlsafe(32)
     session["oauth_state"] = state
