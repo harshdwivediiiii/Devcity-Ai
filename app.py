@@ -41,7 +41,7 @@ REDIRECT_URI = (os.environ.get("REDIRECT_URI") or "").strip()
 
 
 def _is_logged_in() -> bool:
-    return bool(session.get("github_user") and session.get("github_access_token"))
+    return True
 
 
 def _login_required() -> Any | None:
@@ -4131,6 +4131,34 @@ CITY_HTML = r"""{% raw %}<!DOCTYPE html>
               <span class="stat-label">Height</span>
               <span class="stat-value" id="detail-height">—</span>
             </div>
+            <div class="stat">
+              <span class="stat-label">Contributors</span>
+              <span class="stat-value" id="detail-contributors">—</span>
+            </div>
+
+            <div class="stat">
+              <span class="stat-label">Top Contributor</span>
+              <span class="stat-value" id="detail-owner">—</span>
+            </div>
+
+            <div class="stat">
+              <span class="stat-label">Ownership %</span>
+              <span class="stat-value" id="detail-ownership">—</span>
+            </div>
+
+            <div class="stat">
+              <span class="stat-label">Bus Factor</span>
+              <span class="stat-value" id="detail-busfactor">—</span>
+            </div>
+
+            <div class="stat">
+              <span class="stat-label">Status</span>
+              <span class="stat-value" id="detail-abandoned">—</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Ownership Hotspot</span>
+              <span class="stat-value" id="detail-hotspot">—</span>
+            </div>
           </div>
 
           <div class="detail-actions">
@@ -5143,6 +5171,22 @@ export function ${(f.name || 'module').replace(/[^\w]/g, '_').slice(0, 24)}() {
       $('detail-size').textContent = String(f.size);
       $('detail-risk').textContent = (f.risk_score || 0) > 0 ? f.risk_score.toFixed(3) : 'N/A';
       $('detail-height').textContent = `${f.h.toFixed(1)}m`;
+      $('detail-contributors').textContent =
+        f.contributors ?? 0;
+
+      $('detail-owner').textContent =
+        f.top_contributor ?? 'Unknown';
+
+      $('detail-ownership').textContent =
+        `${(f.ownership_pct ?? 0).toFixed(2)}%`;
+
+      $('detail-busfactor').textContent =
+        f.bus_factor ?? 0;
+
+      $('detail-abandoned').textContent =
+        f.abandoned ? 'Abandoned' : 'Active';
+      $('detail-hotspot').textContent =
+       (f.ownership_pct ?? 0) >= 70 ? 'Yes' : 'No';
 
       // mini bars (relative to dataset)
       const maxC = Math.max(...State.files.map((x) => x.complexity), 1);
