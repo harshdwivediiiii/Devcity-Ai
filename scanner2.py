@@ -14,6 +14,9 @@ from typing import Callable
 
 import lizard
 import squarify
+from collections import Counter
+from datetime import datetime
+
 
 
 LOGGER = logging.getLogger(__name__)
@@ -164,7 +167,7 @@ def clone_repository(repo_url: str, token: str | None) -> str:
     LOGGER.info("[PRO] Cloning repository %s into %s", clone_url, temp_dir)
     try:
         subprocess.run(
-            ["git", "clone", "--depth", "1", clone_url, temp_dir],
+            ["git", "clone", clone_url, temp_dir],
             check=True,
             capture_output=True,
             text=True,
@@ -255,6 +258,90 @@ def _compute_git_churn(repo_root: str, relative_path: str) -> tuple[int, int]:
     return churn, bug_churn
 
 
+def _compute_contributor_metrics(repo_root: str, relative_path: str):
+    try:
+        result = subprocess.run(
+            ["git", "log", "--format=%an", "--", relative_path],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        if result.returncode != 0:
+            return 0, "", 0.0, 0, False
+
+        authors = [
+            line.strip()
+            for line in result.stdout.splitlines()
+            if line.strip()
+        ]
+
+        if not authors:
+            return 0, "", 0.0, 0, False
+
+        counts = Counter(authors)
+
+        contributors = len(counts)
+
+        top_contributor = counts.most_common(1)[0][0]
+
+        total_commits = sum(counts.values())
+
+        ownership_pct = (
+            counts[top_contributor] / total_commits
+        ) * 100
+        percentages = sorted(
+            [
+                count / total_commits
+                for count in counts.values()
+            ],
+            reverse=True,
+        )
+
+        running = 0
+        bus_factor = 0
+
+        for pct in percentages:
+            running += pct
+            bus_factor += 1
+
+            if running >= 0.5:
+                break
+        last_commit = subprocess.run(
+            [
+                "git",
+                "log",
+                "-1",
+                "--format=%ct",
+                "--",
+                relative_path,
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+
+        abandoned = False
+
+        if last_commit.stdout.strip():
+            ts = int(last_commit.stdout.strip())
+
+            days_old = (
+                datetime.now().timestamp() - ts
+            ) / 86400
+
+            abandoned = days_old > 180
+        return (
+            contributors,
+            top_contributor,
+            round(ownership_pct, 2),
+             bus_factor,
+             abandoned,
+        )
+    except Exception:
+        return 0, "", 0.0, 0, False
+
 def _count_local_python_imports(content: str, local_modules: set[str]) -> int:
     unique_imports: set[str] = set()
     for line in content.splitlines():
@@ -311,6 +398,17 @@ def analyze_file(file_info: dict, repo_root: str) -> dict | None:
         else 0.0
     )
     churn, bug_churn = _compute_git_churn(repo_root, relative_path)
+    contributors, top_contributor, ownership_pct, bus_factor, abandoned = (
+        _compute_contributor_metrics(repo_root, relative_path)
+    )
+    print(
+    f"{relative_path} | "
+    f"contributors={contributors} | "
+    f"owner={top_contributor} | "
+    f"ownership={ownership_pct}% | "
+    f"bus_factor={bus_factor} | "
+    f"abandoned={abandoned}"
+)
     extension = str(file_info.get("extension") or local_path.suffix.lower())
     local_modules = set(file_info.get("local_modules") or [])
     fan_out = _count_local_python_imports(content, local_modules) if extension == ".py" else 0
@@ -328,6 +426,11 @@ def analyze_file(file_info: dict, repo_root: str) -> dict | None:
         "churn": churn,
         "bug_churn": bug_churn,
         "fan_out": fan_out,
+        "contributors": contributors,
+        "top_contributor": top_contributor,
+        "ownership_pct": ownership_pct,
+        "bus_factor": bus_factor,
+        "abandoned": abandoned,
     }
 
 

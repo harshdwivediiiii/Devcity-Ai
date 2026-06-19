@@ -61,6 +61,12 @@ def db_init() -> None:
                 fan_out INTEGER,
                 risk_score REAL,
                 anomaly_score REAL
+
+                contributors INTEGER,
+                top_contributor TEXT,
+                ownership_pct REAL,
+                bus_factor INTEGER,
+                abandoned INTEGER
             )
             """
         )
@@ -114,10 +120,16 @@ def bulk_insert_file_metrics(snapshot_id: str, rows: list[dict]) -> None:
             int(row.get("churn") or 0),
             int(row.get("bug_churn") or 0),
             int(row.get("fan_out") or 0),
+            int(row.get("contributors") or 0),
+            row.get("top_contributor"),
+            float(row.get("ownership_pct") or 0.0),
+            int(row.get("bus_factor") or 0),
+            int(bool(row.get("abandoned"))),
             None if row.get("risk_score") is None else float(row.get("risk_score")),
             None
             if row.get("anomaly_score") is None
             else float(row.get("anomaly_score")),
+            
         )
         for row in rows
     ]
@@ -141,10 +153,17 @@ def bulk_insert_file_metrics(snapshot_id: str, rows: list[dict]) -> None:
                     churn,
                     bug_churn,
                     fan_out,
+
+                    contributors,
+                    top_contributor,
+                    ownership_pct,
+                    bus_factor,
+                    abandoned,
+
                     risk_score,
                     anomaly_score
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 values,
             )
@@ -167,6 +186,13 @@ def get_snapshot_files(snapshot_id: str) -> list[dict]:
                 churn,
                 bug_churn,
                 fan_out,
+
+                contributors,
+                top_contributor,
+                ownership_pct,
+                bus_factor,
+                abandoned,
+                
                 risk_score,
                 anomaly_score
             FROM file_metrics
