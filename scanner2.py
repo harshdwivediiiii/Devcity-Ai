@@ -320,6 +320,7 @@ def _compute_contributor_metrics(repo_root: str, relative_path: str):
             cwd=repo_root,
             capture_output=True,
             text=True,
+            timeout=60,
         )
 
         abandoned = False
@@ -340,6 +341,11 @@ def _compute_contributor_metrics(repo_root: str, relative_path: str):
              abandoned,
         )
     except Exception:
+        LOGGER.debug(
+            "Failed to compute contributor metrics for %s",
+            relative_path,
+            exc_info=True,
+        )
         return 0, "", 0.0, 0, False
 
 def _count_local_python_imports(content: str, local_modules: set[str]) -> int:
@@ -401,14 +407,15 @@ def analyze_file(file_info: dict, repo_root: str) -> dict | None:
     contributors, top_contributor, ownership_pct, bus_factor, abandoned = (
         _compute_contributor_metrics(repo_root, relative_path)
     )
-    print(
-    f"{relative_path} | "
-    f"contributors={contributors} | "
-    f"owner={top_contributor} | "
-    f"ownership={ownership_pct}% | "
-    f"bus_factor={bus_factor} | "
-    f"abandoned={abandoned}"
-)
+    LOGGER.debug(
+        "[PRO] %s | contributors=%d | owner=%s | ownership=%.2f%% | bus_factor=%d | abandoned=%s",
+        relative_path,
+        contributors,
+        top_contributor,
+        ownership_pct,
+        bus_factor,
+        abandoned,
+    )
     extension = str(file_info.get("extension") or local_path.suffix.lower())
     local_modules = set(file_info.get("local_modules") or [])
     fan_out = _count_local_python_imports(content, local_modules) if extension == ".py" else 0
