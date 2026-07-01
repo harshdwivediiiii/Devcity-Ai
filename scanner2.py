@@ -279,7 +279,7 @@ def _count_local_python_imports(content: str, local_modules: set[str]) -> int:
     return len(unique_imports)
 
 
-def _compute_comment_density(content: str, lizard_nloc: int) -> float:
+def _compute_comment_density(non_blank_lines: int, lizard_nloc: int) -> float:
     """
     Estimate the comment density of a source file.
 
@@ -292,14 +292,16 @@ def _compute_comment_density(content: str, lizard_nloc: int) -> float:
     excludes blank lines and comment lines).  Subtracting it from the total
     non-blank line count gives an approximation of the comment-line count.
 
+    The caller is expected to pass the already-computed non-blank line count so
+    that this function does not re-scan the file content redundantly.
+
     Args:
-        content:      Raw text content of the file.
-        lizard_nloc:  Number of code lines reported by ``lizard.analyze_file``.
+        non_blank_lines: Number of non-blank lines already counted by the caller.
+        lizard_nloc:     Number of code lines reported by ``lizard.analyze_file``.
 
     Returns:
         A float in [0.0, 1.0] where 1.0 means every non-blank line is a comment.
     """
-    non_blank_lines = sum(1 for line in content.splitlines() if line.strip())
     if non_blank_lines == 0:
         return 0.0
     # Guard: lizard_nloc should never exceed non_blank_lines, but clamp just in case.
@@ -375,7 +377,8 @@ def analyze_file(file_info: dict, repo_root: str) -> dict | None:
     )
 
     # Comment density: files with almost no comments are harder to maintain.
-    comment_density = _compute_comment_density(content, lizard_nloc)
+    # Pass the already-computed non_empty_line_count to avoid re-scanning content.
+    comment_density = _compute_comment_density(non_empty_line_count, lizard_nloc)
 
     churn, bug_churn = _compute_git_churn(repo_root, relative_path)
     extension = str(file_info.get("extension") or local_path.suffix.lower())

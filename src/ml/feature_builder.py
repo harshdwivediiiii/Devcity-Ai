@@ -39,7 +39,7 @@ def build_features(record: dict[str, Any]) -> dict[str, float]:
         correlates with instability or ongoing refactors.
 
     comment_density
-        Fraction of non-blank lines that are comment lines (0.0 – 1.0).  A
+        Fraction of non-blank lines that are comment lines (0.0 - 1.0).  A
         file with almost no comments is harder to maintain and review.
 
     max_function_length

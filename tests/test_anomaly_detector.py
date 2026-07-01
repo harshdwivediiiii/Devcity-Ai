@@ -10,6 +10,8 @@ These tests verify the multi-metric Z-score anomaly detector:
 - Normal (non-outlier) files produce score == 0.0
 """
 
+import math
+
 import pytest
 
 from src.ml.anomaly_detector import (
@@ -40,9 +42,6 @@ class TestZscoreStats:
         mean, std = _zscore_stats([42.0])
         assert mean == pytest.approx(42.0)
         assert std > 0  # fallback to 1e-9
-
-
-import math
 
 
 class TestZscore:

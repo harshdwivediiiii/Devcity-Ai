@@ -5,6 +5,8 @@ These tests verify that ``build_features`` correctly extracts, defaults, and
 encodes features from raw per-file records.
 """
 
+from typing import ClassVar
+
 import pytest
 
 from src.ml.feature_builder import build_features
@@ -36,7 +38,7 @@ def make_record(**overrides) -> dict:
 class TestBuildFeaturesReturnShape:
     """build_features must return a dict with the required keys."""
 
-    REQUIRED_KEYS = {
+    REQUIRED_KEYS: ClassVar[set[str]] = {
         "size",
         "complexity",
         "depth",

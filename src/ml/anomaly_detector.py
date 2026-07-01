@@ -86,8 +86,9 @@ def _confidence_from_zscore(z: float, threshold: float = 2.0) -> float:
     Estimate detection confidence from a Z-score.
 
     Confidence rises with the distance of the value from the threshold.
-    At exactly the threshold we have low confidence (0.5); at 3× threshold
-    we approach 1.0.
+    At exactly the threshold we have moderate confidence (0.5); it climbs
+    slowly afterward (e.g. ~0.75 at 3x threshold) and only approaches 1.0
+    asymptotically for much larger z values.
 
     Args:
         z:         Absolute Z-score.

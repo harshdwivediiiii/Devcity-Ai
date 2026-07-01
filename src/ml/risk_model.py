@@ -55,17 +55,18 @@ def compute_risk_score(features: dict[str, float]) -> float:
         A float in [0.0, 1.0] rounded to four decimal places.
     """
     # --- Normalise each feature to [0, 1] -----------------------------------
-    # Use .get() with defaults so the function is tolerant of sparse dicts.
-    complexity_norm = min(features.get("complexity", 1.0) / _COMPLEXITY_CEILING, 1.0)
-    size_norm = min(features.get("size", 0.0) / _SIZE_CEILING, 1.0)
-    churn_norm = min(features.get("churn", 0.0) / _CHURN_CEILING, 1.0)
-    max_fn_len_norm = min(features.get("max_function_length", 0.0) / _MAX_FN_LEN_CEILING, 1.0)
+    # Clamp both ends: negative inputs (e.g. malformed records) are floored at
+    # 0.0, and values above the ceiling are capped at 1.0.
+    complexity_norm = max(0.0, min(features.get("complexity", 1.0) / _COMPLEXITY_CEILING, 1.0))
+    size_norm = max(0.0, min(features.get("size", 0.0) / _SIZE_CEILING, 1.0))
+    churn_norm = max(0.0, min(features.get("churn", 0.0) / _CHURN_CEILING, 1.0))
+    max_fn_len_norm = max(0.0, min(features.get("max_function_length", 0.0) / _MAX_FN_LEN_CEILING, 1.0))
 
     # Invert comment_density: 0 comments → full risk contribution (1.0);
     # fully commented file → no risk contribution (0.0).
-    comment_risk = 1.0 - min(features.get("comment_density", 0.0), 1.0)
+    comment_risk = 1.0 - max(0.0, min(features.get("comment_density", 0.0), 1.0))
 
-    type_importance = min(features.get("type_importance", 0.1), 1.0)
+    type_importance = max(0.0, min(features.get("type_importance", 0.1), 1.0))
 
     # --- Weighted combination -----------------------------------------------
     raw_score = (
@@ -77,4 +78,4 @@ def compute_risk_score(features: dict[str, float]) -> float:
         + 0.05 * type_importance
     )
 
-    return round(min(raw_score, 1.0), 4)
+    return round(max(0.0, min(raw_score, 1.0)), 4)
