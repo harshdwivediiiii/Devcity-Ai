@@ -279,8 +279,61 @@ def _count_local_python_imports(content: str, local_modules: set[str]) -> int:
     return len(unique_imports)
 
 
+def _compute_comment_density(non_blank_lines: int, lizard_nloc: int) -> float:
+    """
+    Estimate the comment density of a source file.
+
+    Comment density is the fraction of non-blank lines that are comments.
+    It is calculated as:
+
+        comment_density = max(0, non_blank_lines - lizard_nloc) / non_blank_lines
+
+    ``lizard_nloc`` is the number of lines that Lizard counts as *code* (it
+    excludes blank lines and comment lines).  Subtracting it from the total
+    non-blank line count gives an approximation of the comment-line count.
+
+    The caller is expected to pass the already-computed non-blank line count so
+    that this function does not re-scan the file content redundantly.
+
+    Args:
+        non_blank_lines: Number of non-blank lines already counted by the caller.
+        lizard_nloc:     Number of code lines reported by ``lizard.analyze_file``.
+
+    Returns:
+        A float in [0.0, 1.0] where 1.0 means every non-blank line is a comment.
+    """
+    if non_blank_lines == 0:
+        return 0.0
+    # Guard: lizard_nloc should never exceed non_blank_lines, but clamp just in case.
+    comment_lines = max(0, non_blank_lines - lizard_nloc)
+    return round(comment_lines / non_blank_lines, 4)
+
+
 def analyze_file(file_info: dict, repo_root: str) -> dict | None:
-    """Analyze a file for static metrics and git history features."""
+    """
+    Analyze a single source file for static metrics and git-history features.
+
+    Extracts the following per-file metrics:
+        - ``size``              : number of non-blank lines
+        - ``byte_size``         : raw file size in bytes
+        - ``complexity``        : average cyclomatic complexity across all functions
+        - ``function_count``    : total number of functions/methods detected
+        - ``avg_params``        : average number of parameters per function
+        - ``max_function_length``: length (in lines) of the longest function
+        - ``comment_density``   : fraction of non-blank lines that are comments
+        - ``depth``             : directory nesting depth (number of '/' in path)
+        - ``churn``             : total number of git commits touching this file
+        - ``bug_churn``         : commits whose message matches bug-fix keywords
+        - ``fan_out``           : number of local module imports (Python only)
+
+    Args:
+        file_info: Dict with keys ``local_path``, ``path``, ``name``,
+                   ``extension``, and ``local_modules``.
+        repo_root: Absolute path to the root of the cloned repository.
+
+    Returns:
+        A dict of per-file metrics, or ``None`` if the file cannot be read.
+    """
     local_path = Path(file_info["local_path"])
     relative_path = str(file_info.get("path") or local_path.name).replace(os.sep, "/")
 
@@ -292,10 +345,14 @@ def analyze_file(file_info: dict, repo_root: str) -> dict | None:
         return None
 
     non_empty_line_count = sum(1 for line in content.splitlines() if line.strip())
+
+    # Run Lizard static analysis to extract function-level metrics.
     function_list = []
+    lizard_nloc = non_empty_line_count  # safe fallback: assume all lines are code
     try:
         analysis = lizard.analyze_file(str(local_path))
         function_list = list(analysis.function_list)
+        lizard_nloc = int(analysis.nloc or non_empty_line_count)
     except Exception as error:
         LOGGER.debug("[PRO] Lizard failed for %s: %s", relative_path, error)
 
@@ -310,6 +367,19 @@ def analyze_file(file_info: dict, repo_root: str) -> dict | None:
         if function_count
         else 0.0
     )
+
+    # Length (in lines) of the longest function — a proxy for testability risk.
+    # Short functions are easier to unit-test; very long ones often hide complexity.
+    max_function_length = (
+        max(getattr(fn, "length", 0) for fn in function_list)
+        if function_list
+        else 0
+    )
+
+    # Comment density: files with almost no comments are harder to maintain.
+    # Pass the already-computed non_empty_line_count to avoid re-scanning content.
+    comment_density = _compute_comment_density(non_empty_line_count, lizard_nloc)
+
     churn, bug_churn = _compute_git_churn(repo_root, relative_path)
     extension = str(file_info.get("extension") or local_path.suffix.lower())
     local_modules = set(file_info.get("local_modules") or [])
@@ -324,6 +394,8 @@ def analyze_file(file_info: dict, repo_root: str) -> dict | None:
         "complexity": float(complexity),
         "function_count": function_count,
         "avg_params": float(avg_params),
+        "max_function_length": max_function_length,
+        "comment_density": comment_density,
         "depth": relative_path.count("/"),
         "churn": churn,
         "bug_churn": bug_churn,

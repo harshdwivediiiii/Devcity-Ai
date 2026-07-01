@@ -40,6 +40,19 @@ def _complexity_color(complexity: float) -> str:
 
 
 def _ensure_record_defaults(record: dict[str, Any]) -> dict[str, Any]:
+    """
+    Guarantee that every expected key is present in a file record.
+
+    Fills missing or absent fields with safe zero/None defaults so that
+    downstream layout and ML code never receives ``KeyError`` or ``None``
+    where a numeric value is expected.
+
+    Args:
+        record: A raw file record dict from the scanner or an older snapshot.
+
+    Returns:
+        A new dict with all expected keys present.
+    """
     enriched = dict(record)
     enriched.setdefault("name", "")
     enriched.setdefault("path", enriched.get("name", ""))
@@ -49,12 +62,16 @@ def _ensure_record_defaults(record: dict[str, Any]) -> dict[str, Any]:
     enriched.setdefault("complexity", 1.0)
     enriched.setdefault("function_count", 0)
     enriched.setdefault("avg_params", 0.0)
+    enriched.setdefault("max_function_length", 0)   # new metric
+    enriched.setdefault("comment_density", 0.0)      # new metric
     enriched.setdefault("depth", 0)
     enriched.setdefault("churn", 0)
     enriched.setdefault("bug_churn", 0)
     enriched.setdefault("fan_out", 0)
     enriched.setdefault("risk_score", None)
     enriched.setdefault("anomaly_score", None)
+    enriched.setdefault("anomaly_confidence", None)  # new score field
+    enriched.setdefault("anomaly_reasons", [])        # new score field
     return enriched
 
 
@@ -95,27 +112,43 @@ from src.ml.anomaly_detector import detect_anomalies
 
 def score_files(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
-    Attach ``risk_score`` and ``anomaly_score`` to each record.
-    Leverages ML feature engineering, risk scoring, and anomaly detection layers.
+    Attach ML scores to every file record in the city dataset.
+
+    For each record this function adds:
+
+    - ``risk_score``         : float [0, 1] — overall maintenance/defect risk
+    - ``anomaly_score``      : float [0, 1] — how anomalous this file is
+    - ``anomaly_confidence`` : float [0, 1] — detection confidence
+    - ``anomaly_reasons``    : list[str]    — human-readable explanations
+
+    Having ``anomaly_reasons`` satisfies the project's *Explainable AI*
+    principle: every ML recommendation comes with traceable reasoning.
+
+    Args:
+        records: List of raw file records produced by ``scanner2.analyze_file``.
+
+    Returns:
+        The same list with the four score fields added in-place.
     """
     if not records:
         return records
 
-    # 1. Feature Engineering Layer
+    # 1. Feature Engineering: convert raw records → ML feature dicts
     features_list = [build_features(record) for record in records]
 
-    # 2. Anomaly Detection Layer (Batch calculation over all items)
-    anomaly_scores = detect_anomalies(features_list)
+    # 2. Anomaly Detection: batch Z-score analysis across all files.
+    #    Returns a list of dicts: {score, confidence, reasons}
+    anomaly_results = detect_anomalies(features_list)
 
-    # 3. Attach scores
+    # 3. Risk Scoring + score attachment
     for i, record in enumerate(records):
         features = features_list[i]
-        
-        # Calculate Risk Score from ML Risk Model
+        anomaly = anomaly_results[i]
+
         record["risk_score"] = compute_risk_score(features)
-        
-        # Attach Anomaly Score
-        record["anomaly_score"] = anomaly_scores[i]
+        record["anomaly_score"] = anomaly["score"]
+        record["anomaly_confidence"] = anomaly["confidence"]
+        record["anomaly_reasons"] = anomaly["reasons"]
 
     return records
 
